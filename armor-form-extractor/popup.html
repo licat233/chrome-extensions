@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="css/all.min.css" />
+    <link rel="stylesheet" href="css/animate.min.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body class="animate__animated animate__fadeIn animate__faster">
+    <div id="header" class="animate__animated animate__fadeInDown animate__faster">
+      <div class="header-accent"></div>
+      <img src="armor-icon.svg" class="header-icon" alt="ARMOR" />
+      <div class="header-title">ARMOR Inquiry</div>
+    </div>
+    <div id="content">
+      <div id="empty-state" class="animate__animated animate__fadeIn">
+        <i id="empty-icon" class="fa-solid fa-magnifying-glass empty-icon animate__animated animate__pulse animate__infinite animate__slower"></i>
+        <span id="empty-message">No form data found on this page.</span>
+      </div>
+    </div>
+    <div id="footer" class="animate__animated animate__fadeInUp animate__faster">
+      <div class="footer-left">
+        <div class="format-wrap">
+          <i class="fa-solid fa-file-lines format-icon"></i>
+          <select id="format">
+            <option value="text">Plain Text</option>
+            <option value="json">JSON</option>
+            <option value="markdown">Markdown</option>
+          </select>
+        </div>
+      </div>
+      <div class="footer-right">
+        <button id="wechat-share" title="Copy plain text and open WeChat">
+          <i class="fa-brands fa-weixin"></i>
+          <span class="btn-label">WeChat</span>
+        </button>
+        <button id="screenshot" title="Copy as image">
+          <i class="fa-solid fa-image"></i>
+          <span class="btn-label">Image</span>
+        </button>
+        <button id="copy-all">
+          <i class="fa-solid fa-copy"></i>
+          <span class="btn-label">Copy</span>
+        </button>
+      </div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

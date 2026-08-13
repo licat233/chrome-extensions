@@ -1,0 +1,171 @@
+#mic-video-link-panel {
+  position: fixed;
+  top: 96px;
+  right: 20px;
+  z-index: 2147483647;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  color: #1f2937;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.2);
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+#mic-video-link-panel * {
+  box-sizing: border-box;
+}
+
+.mic-vld-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mic-vld-header strong {
+  display: block;
+  color: #111827;
+  font-size: 14px;
+}
+
+#mic-vld-status {
+  display: block;
+  max-width: 300px;
+  overflow: hidden;
+  color: #6b7280;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#mic-vld-toggle {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: #374151;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 26px;
+}
+
+#mic-vld-body {
+  max-height: 62vh;
+  overflow: auto;
+  padding: 10px;
+}
+
+#mic-video-link-panel.is-collapsed #mic-vld-body {
+  display: none;
+}
+
+.mic-vld-empty {
+  margin: 0;
+  color: #6b7280;
+}
+
+.mic-vld-batch {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -10px -10px 10px;
+  padding: 10px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mic-vld-batch button {
+  min-height: 30px;
+  padding: 5px 9px;
+  color: #ffffff;
+  background: #059669;
+  border: 1px solid #047857;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mic-vld-batch button:nth-child(3) {
+  color: #1f2937;
+  background: #ffffff;
+  border-color: #d1d5db;
+  font-weight: 400;
+}
+
+.mic-vld-batch button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.mic-vld-card {
+  margin: 0 0 10px;
+  padding: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.mic-vld-card:last-child {
+  margin-bottom: 0;
+}
+
+.mic-vld-title {
+  color: #111827;
+  font-weight: 700;
+}
+
+.mic-vld-meta {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.mic-vld-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.mic-vld-actions button {
+  min-height: 28px;
+  padding: 4px 8px;
+  color: #ffffff;
+  background: #2563eb;
+  border: 1px solid #1d4ed8;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.mic-vld-actions button:nth-child(2n) {
+  color: #1f2937;
+  background: #ffffff;
+  border-color: #d1d5db;
+}
+
+.mic-vld-links {
+  width: 100%;
+  min-height: 54px;
+  margin-top: 8px;
+  padding: 6px;
+  resize: vertical;
+  color: #374151;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-family: Menlo, Consolas, monospace;
+  font-size: 11px;
+}

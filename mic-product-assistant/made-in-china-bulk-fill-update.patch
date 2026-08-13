@@ -1,0 +1,322 @@
+--- /Users/licat/chrome_extensions/made-in-china-bulk-fill/content.js	2026-05-22 11:15:49
++++ content.js	2026-05-22 11:49:49
+@@ -579,12 +579,21 @@
+     const binding = await activateFobPriceMode("0", shouldApply);
+     const section = binding?.section;
+     if (!section) return;
++
++    const values = getSkuPriceDefaults(get);
++    const skuRows = getSkuPriceRows(section);
++
++    if (skuRows.length) {
++      fillSkuPriceRows(skuRows, values, shouldApply, filled);
++      if (shouldApply) syncProdSkuHidden(binding.root, "0");
++      return;
++    }
+ 
+     const fields = [
+-      ["规格最小起订量", "input[name='skuMinOrder_one'], .J-sku-MOQ"],
+-      ["规格商品编码", "input[name='skuCode_one']"],
+-      ["规格库存", "input[name='skuStock_one']"],
+-      ["规格单价", "input[name='skuPrice_one']"]
++      ["规格最小起订量", "input[name='skuMinOrder_one'], input[name='skuMinOrder'], .J-sku-MOQ"],
++      ["规格商品编码", "input[name='skuCode_one'], input[name='skuCode']"],
++      ["规格库存", "input[name='skuStock_one'], input[name='skuStock']"],
++      ["规格单价", "input[name='skuPrice_one'], input[name='skuPrice']"]
+     ];
+ 
+     for (const [key, selector] of fields) {
+@@ -599,16 +608,67 @@
+     }
+ 
+     if (shouldApply) {
+-      const pricingRadio = section.querySelector("input[name='pricingStrategy'][value='2']");
++      const pricingRadio = findSingleSpecMoqRadio(section);
+       if (pricingRadio && !pricingRadio.checked) {
+         enableFobControl(pricingRadio);
+         pricingRadio.click();
+         pricingRadio.dispatchEvent(new Event("change", { bubbles: true }));
+         syncRadioGroupAttribute(pricingRadio);
++      }
++      syncProdSkuHidden(binding.root, "0");
++    }
++  }
++
++  function getSkuPriceDefaults(get) {
++    return {
++      minOrder: get("规格最小起订量", "SKU最小起订量", "最小起订量"),
++      code: get("规格商品编码", "SKU商品编码", "商品编码"),
++      stock: get("规格库存", "SKU库存", "库存", "Stock"),
++      price: get("规格单价", "SKU单价", "单价", "Price")
++    };
++  }
++
++  function getSkuPriceRows(section) {
++    const rows = [...section.querySelectorAll(".sku-info-table-body tbody tr")].filter((row) =>
++      row.querySelector("input[name='skuMinOrder'], input[name='skuCode'], input[name='skuStock'], input[name='skuPrice']")
++    );
++    if (rows.length) return rows;
++    return [...section.querySelectorAll("tr.min-order-fixed")].filter((row) =>
++      row.querySelector("input[name='skuMinOrder_one'], input[name='skuCode_one'], input[name='skuStock_one'], input[name='skuPrice_one']")
++    );
++  }
++
++  function fillSkuPriceRows(rows, values, shouldApply, filled) {
++    const fields = [
++      { key: "规格最小起订量", value: values.minOrder, selector: "input[name='skuMinOrder'], input[name='skuMinOrder_one'], .J-sku-MOQ", label: "skuMinOrder" },
++      { key: "规格商品编码", value: values.code, selector: "input[name='skuCode'], input[name='skuCode_one']", label: "skuCode" },
++      { key: "规格库存", value: values.stock, selector: "input[name='skuStock'], input[name='skuStock_one']", label: "skuStock" },
++      { key: "规格单价", value: values.price, selector: "input[name='skuPrice'], input[name='skuPrice_one']", label: "skuPrice" }
++    ];
++
++    for (const field of fields) {
++      if (!field.value) continue;
++      let count = 0;
++      for (const row of rows) {
++        const control = row.querySelector(field.selector);
++        if (!control) continue;
++        if (shouldApply) {
++          enableFobControl(control);
++          applyValue(control, field.value, field.key);
++        }
++        count += 1;
+       }
++      if (count) {
++        filled.push({ key: field.key, value: field.value, target: `${field.label} x ${count}`, score: 120 });
++      }
+     }
+   }
+ 
++  function findSingleSpecMoqRadio(section) {
++    const radios = [...section.querySelectorAll("input[name='pricingStrategy']")];
++    return radios.find((radio) => normalize(getNearbyText(radio)).includes(normalize("单规格最小起订量"))) || radios[0] || null;
++  }
++
+   async function fillCustomProperties(entries, get, shouldApply, filled) {
+     const reserved = new Set([
+       "产品名称", "中心词", "关键词", "产品分组", "产品型号", "产品亮点1", "产品亮点2", "产品亮点3",
+@@ -737,10 +797,13 @@
+         if (shouldApply) {
+           enableFobControl(stockInput);
+           applyValue(stockInput, stock, "库存");
++          syncDirectSaleNum(binding.root, stock);
+         }
+         filled.push({ key: "库存", value: stock, target: "#prodStockNewOfLadder0", score: 120 });
+       }
+     }
++
++    if (shouldApply) syncProdSkuHidden(binding.root, "1");
+   }
+ 
+   async function getSequentialLadderControls(section, index, shouldApply) {
+@@ -797,9 +860,12 @@
+       if (shouldApply) {
+         enableFobControl(control);
+         applyValue(control, value, key);
++        if (key === "区间价库存") syncDirectSaleNum(binding.root, value);
+       }
+       filled.push({ key, value, target: selector, score: 120 });
+     }
++
++    if (shouldApply) syncProdSkuHidden(binding.root, "2");
+   }
+ 
+   function determineFobPriceMode(get) {
+@@ -807,8 +873,104 @@
+     if (get("价格区间1起订量") || get("价格区间1单价") || get("阶梯价1起订量") || get("阶梯价1单价")) return "1";
+     if (get("规格最小起订量") || get("规格单价") || get("规格库存") || get("规格商品编码")) return "0";
+     return null;
++  }
++
++  function syncDirectSaleNum(root, value) {
++    const input = root?.querySelector("input[type='hidden'][name='directSaleNum'], #directSaleNum");
++    if (!input || !value) return;
++    setNativeValue(input, value);
++    dispatchEditableEvents(input);
++  }
++
++  function syncProdSkuHidden(root, mode) {
++    const input = root?.querySelector("input[type='hidden'][name='prodSku']");
++    if (!input?.value) return;
++
++    let data;
++    try {
++      data = JSON.parse(input.value);
++    } catch (_error) {
++      return;
++    }
++
++    if (mode === "0") syncSkuModeHidden(root, data);
++    if (mode === "1") syncLadderModeHidden(root, data);
++    if (mode === "2") syncReferenceModeHidden(root, data);
++
++    setNativeValue(input, JSON.stringify(data));
++    dispatchEditableEvents(input);
+   }
+ 
++  function syncSkuModeHidden(root, data) {
++    data.pricingStrategy = getCheckedPricingStrategy(root) || data.pricingStrategy || 2;
++    const section = root.querySelector(".J-sku-price");
++    if (!section) return;
++
++    const rows = getSkuPriceRows(section);
++    if (!Array.isArray(data.skus) || !rows.length) return;
++
++    rows.forEach((row, index) => {
++      const sku = data.skus[index];
++      if (!sku) return;
++      copyInputValueToObject(row, sku, "skuMinOrder", "input[name='skuMinOrder'], input[name='skuMinOrder_one']");
++      copyInputValueToObject(row, sku, "skuCode", "input[name='skuCode'], input[name='skuCode_one']");
++      copyInputValueToObject(row, sku, "skuStock", "input[name='skuStock'], input[name='skuStock_one']");
++      copyInputValueToObject(row, sku, "skuPrice", "input[name='skuPrice'], input[name='skuPrice_one']");
++    });
++  }
++
++  function syncLadderModeHidden(root, data) {
++    data.pricingStrategy = 1;
++    const section = root.querySelector(".J-ladder-price");
++    if (!section) return;
++    const rows = [...section.querySelectorAll("tr.J-ladder-item")];
++    const ladderPrices = rows.map((row) => ({
++      minOrder: valueOf(row.querySelector("input.J-ladderMOQ, input[name='prodMinimumOrderOfLadder']")),
++      price: valueOf(row.querySelector("input.J-ladderprice, input[name='prodPriceNewOfLadder']"))
++    })).filter((item) => item.minOrder || item.price);
++    const stock = valueOf(section.querySelector("#prodStockNewOfLadder0, input.J-ladderstock"));
++    if (ladderPrices.length) {
++      data.ladderPrices = ladderPrices;
++      data.ladders = ladderPrices;
++    }
++    if (stock) {
++      data.stock = stock;
++      data.directSaleNum = stock;
++    }
++  }
++
++  function syncReferenceModeHidden(root, data) {
++    data.pricingStrategy = 0;
++    const section = root.querySelector(".J-reference-price");
++    if (!section) return;
++    const minOrder = valueOf(section.querySelector("input[name='prodMinimumOrderOfBase'], .J-reference-MOQ"));
++    const priceStart = valueOf(section.querySelector("input[name='prodPriceNewStartOfBase'], .J-reference-price1"));
++    const priceEnd = valueOf(section.querySelector("input[name='prodPriceNewEndOfBase'], .J-reference-price2"));
++    const stock = valueOf(section.querySelector("input[name='prodStockNewOfBase'], #prodStockNewOfBase"));
++    Object.assign(data, {
++      prodMinimumOrderOfBase: minOrder || data.prodMinimumOrderOfBase,
++      prodPriceNewStartOfBase: priceStart || data.prodPriceNewStartOfBase,
++      prodPriceNewEndOfBase: priceEnd || data.prodPriceNewEndOfBase,
++      prodStockNewOfBase: stock || data.prodStockNewOfBase,
++      directSaleNum: stock || data.directSaleNum
++    });
++  }
++
++  function getCheckedPricingStrategy(root) {
++    const checked = root.querySelector(".J-sku-price input[name='pricingStrategy']:checked");
++    const value = checked?.value;
++    return value === "" || value == null ? null : Number(value);
++  }
++
++  function copyInputValueToObject(row, target, prop, selector) {
++    const value = valueOf(row.querySelector(selector));
++    if (value !== "") target[prop] = value;
++  }
++
++  function valueOf(control) {
++    return control?.value?.trim?.() || "";
++  }
++
+   async function activateFobPriceMode(mode, shouldApply) {
+     const root = findSectionRoot("specSku");
+     if (!root) return null;
+--- /Users/licat/chrome_extensions/made-in-china-bulk-fill/popup.js	2026-05-22 11:09:34
++++ popup.js	2026-05-22 11:50:03
+@@ -57,7 +57,7 @@
+ 
+ # FOB价格设置
+ # -- 插件根据提供的字段自动选择三种模式之一：
+-# -- 模式0-一口价销售：规格最小起订量、规格商品编码、规格库存、规格单价
++# -- 模式0-按规格价格销售/一口价销售：规格最小起订量、规格商品编码、规格库存、规格单价
+ # -- 模式1-阶梯价销售：价格区间N起订量/单价（所有区间共享1个库存）
+ # -- 模式2-区间价销售：区间价最小起订量、区间价最低价、区间价最高价、区间价库存
+ 价格区间1起订量：10
+--- /dev/null	2026-05-22 11:50:20
++++ FIELD_BINDINGS.md	2026-05-22 11:50:10
+@@ -0,0 +1,79 @@
++# Made-in-China Bulk Fill Field Bindings
++
++这份表用于维护插件的“板块 -> DOM 区域 -> 字段”绑定规则。插件应优先按板块填充，不使用全页面字段猜测。
++
++## 板块顺序
++
++| 顺序 | 文本板块 | 页面区域 |
++| --- | --- | --- |
++| 1 | `# 基本信息` | `data-anchor="prodName"` |
++| 2 | `# 产品展示` | `data-anchor="picIds"` |
++| 3 | `# 产品亮点` | `#highlightRoot` |
++| 4 | `# 产品属性` | `data-anchor="prodAttrs"` |
++| 5 | `# 规格管理` | `data-anchor="specsMng"` |
++| 6 | `# FOB价格设置` | `data-anchor="skuFob"` |
++| 7 | `# 计量单位` | `data-anchor="unit"` |
++| 8 | `# 包裹尺寸` | `data-anchor="package"` |
++| 9 | `# 运费信息` | `data-anchor="shipping"` |
++| 10 | `# 发货效率信息` | `data-anchor="sent"` |
++| 11 | `# 样品单交易设置` | `data-anchor="sample"` |
++| 12 | `# 其他信息设置` | `data-anchor="other"` / `data-anchor="otherInfo"` |
++| 13 | `# FAQ` | `#faqRoot` |
++| 14 | `# 产品详情` | `data-anchor="prodDescript"` / `#detailRoot` |
++
++## 明确绑定字段
++
++| 文本字段 | 页面板块 | 页面控件 |
++| --- | --- | --- |
++| `产品名称` | 基本信息 | `textarea[name="prodName"]` |
++| `产品型号` | 基本信息 | `input[name="prodModel"]` |
++| `关键词` | 基本信息 | 关键词标签区域 |
++| `产品亮点1..N` | 产品亮点 | 亮点输入框，按序添加 |
++| `认证` | 产品属性 | 标准属性 |
++| `功率` | 产品属性 | 标准属性 |
++| `发光颜色` | 产品属性 | 标准属性 |
++| `电压` | 产品属性 | 标准属性 |
++| `防护等级` | 产品属性 | 标准属性 |
++| `运输包装` | 产品属性 | `input[name="prodPacking"]` |
++| `规格` | 产品属性 | `input[name="prodStandard"]` |
++| `商标` | 产品属性 | `input[name="prodTrademark"]` |
++| `原产地` | 产品属性 | `input[name="prodOrigin"]` |
++| 自定义属性 | 产品属性 | 自定义属性行，按键值对添加 |
++| `规格名称` / `规格值` | 规格管理 | 规格组 |
++| `规格2名称` / `规格2值` | 规格管理 | 第二规格组 |
++| `规格最小起订量` / `规格商品编码` / `规格库存` / `规格单价` | FOB价格设置 | 按规格价格销售/一口价销售；有规格组合时批量填入每一行 SKU |
++| `价格区间N起订量` / `价格区间N单价` / `库存` | FOB价格设置 | 按采购数量-阶梯价销售 |
++| `区间价最小起订量` / `区间价最低价` / `区间价最高价` / `区间价库存` | FOB价格设置 | 区间价销售 |
++| `计量单位` | 计量单位 | 单位选择框 |
++| `单个包裹内产品数量` | 包裹尺寸 | `input[name="packProdNum"]` |
++| `单个包裹长` | 包裹尺寸 | `input[name="packDepth"]` |
++| `单个包裹宽` | 包裹尺寸 | `input[name="packWidth"]` |
++| `单个包裹高` | 包裹尺寸 | `input[name="packHeight"]` |
++| `单个包裹毛重` | 包裹尺寸 | `input[name="grossWeight"]` |
++| `港口` | 发货效率信息 | `input.J-port` |
++| `发货期数量` / `发货期时间` | 发货效率信息 | 第一行发货期 |
++| `发货期数量2..N` / `发货期时间2..N` | 发货效率信息 | 指定编号发货期 |
++| `提供样品` | 样品单交易设置 | 样品开关 |
++| `样品单价` | 样品单交易设置 | `samplesPrice` |
++| `样品单位` | 样品单交易设置 | `samplesPricePacking` |
++| `单次最多拿样数量` | 样品单交易设置 | `maxSamplesCount` |
++| `样品描述` | 样品单交易设置 | `samplesDesc` |
++| `支付方式` | 其他信息设置 | 支付方式复选项 |
++| `产量` | 其他信息设置 | `input[name="prodProductivity"]` |
++| `海关编码` | 其他信息设置 | `input[name="hsCode"]` |
++| `FAQ问题N` / `FAQ答案N` | FAQ | FAQ 行，按序添加 |
++| `产品详情` | 产品详情 | 详情编辑器和隐藏提交字段 |
++
++## 自定义属性保留字段
++
++这些字段不要作为自定义属性填写：
++
++`认证`、`功率`、`发光颜色`、`电压`、`防护等级`、`IP Rating`、`运输包装`、`规格`、`商标`、`原产地`、`产品名称`、`产品型号`、`关键词`、`规格名称`、`规格值`、`FOB价格设置` 相关字段、`包裹尺寸` 相关字段、`样品单交易设置` 相关字段、`FAQ`、`产品详情`。
++
++## 维护原则
++
++- 新增字段时，先确认它属于哪个页面板块，再在该板块根节点内绑定控件。
++- 不要重新加入全页面字段匹配。
++- 如果页面出现同名字段，优先通过 `data-anchor`、模块根节点、模式区域来缩小范围。
++- 如果字段属于标准属性，不要同时输出同义自定义属性。
++- FOB 价格区有 3 套互斥 DOM：`.J-sku-price`、`.J-ladder-price`、`.J-reference-price`。填价格前必须先激活对应模式，并同步隐藏的 `prodSku` 数据。

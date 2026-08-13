@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MIC video links</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 420px;
+        height: 620px;
+        max-width: 100vw;
+        margin: 0;
+        color: #243044;
+        background: #e8edf5;
+        font-family: "Lato", "Inter", Arial, "Microsoft YaHei", sans-serif;
+        font-size: 13px;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        width: 420px;
+        height: 620px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 20% 0%, rgba(255, 255, 255, 0.95), transparent 30%),
+          linear-gradient(145deg, #edf2f8 0%, #dfe7f1 100%);
+      }
+
+      header {
+        position: relative;
+        padding: 18px 18px 16px;
+        color: #ffffff;
+        background:
+          linear-gradient(135deg, rgba(27, 94, 218, 0.98), rgba(15, 180, 150, 0.94)),
+          #2563eb;
+        box-shadow: 0 12px 28px rgba(31, 93, 173, 0.28);
+        overflow: hidden;
+      }
+
+      header::after {
+        position: absolute;
+        right: -46px;
+        top: -54px;
+        width: 150px;
+        height: 150px;
+        border: 24px solid rgba(255, 255, 255, 0.16);
+        border-radius: 50%;
+        content: "";
+      }
+
+      header::before {
+        position: absolute;
+        right: 28px;
+        bottom: -34px;
+        width: 82px;
+        height: 82px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.12);
+        content: "";
+      }
+
+      h1 {
+        position: relative;
+        z-index: 1;
+        margin: 0 0 6px;
+        color: #ffffff;
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: 0;
+      }
+
+      #status {
+        position: relative;
+        z-index: 1;
+        margin: 0;
+        color: rgba(255, 255, 255, 0.86);
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      #batch {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 14px 14px 12px;
+        background: transparent;
+      }
+
+      #batch button:last-child {
+        grid-column: 1 / -1;
+      }
+
+      .folder-row {
+        grid-column: 1 / -1;
+        padding: 10px;
+        background: rgba(247, 250, 253, 0.82);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 12px;
+        box-shadow:
+          5px 5px 12px rgba(149, 164, 187, 0.25),
+          -5px -5px 12px rgba(255, 255, 255, 0.64);
+      }
+
+      .folder-label {
+        display: block;
+        margin: 0 0 6px;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      #folderName {
+        width: 100%;
+        height: 34px;
+        padding: 7px 10px;
+        color: #334155;
+        background: #edf3f9;
+        border: 1px solid rgba(255, 255, 255, 0.78);
+        border-radius: 9px;
+        box-shadow:
+          inset 3px 3px 7px rgba(148, 163, 184, 0.2),
+          inset -3px -3px 7px rgba(255, 255, 255, 0.7);
+        font: 12px "Lato", "Inter", Arial, "Microsoft YaHei", sans-serif;
+        outline: none;
+      }
+
+      #list {
+        overflow: auto;
+        padding: 0 14px 14px;
+      }
+
+      #list::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      #list::-webkit-scrollbar-thumb {
+        background: #c3cfdf;
+        border: 2px solid #e8edf5;
+        border-radius: 999px;
+      }
+
+      .item {
+        margin: 0 0 12px;
+        padding: 12px;
+        background: rgba(247, 250, 253, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 12px;
+        box-shadow:
+          8px 8px 18px rgba(149, 164, 187, 0.34),
+          -8px -8px 18px rgba(255, 255, 255, 0.74);
+      }
+
+      .item:last-child {
+        margin-bottom: 0;
+      }
+
+      .title {
+        color: #1f2937;
+        font-weight: 700;
+        line-height: 1.35;
+      }
+
+      .meta {
+        margin-top: 6px;
+        color: #64748b;
+        font-size: 12px;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      button {
+        position: relative;
+        min-height: 34px;
+        padding: 7px 10px;
+        color: #ffffff;
+        background: linear-gradient(135deg, #2478ff 0%, #0db7d4 100%);
+        border: 0;
+        border-radius: 9px;
+        box-shadow:
+          inset 1px 1px 1px rgba(255, 255, 255, 0.42),
+          5px 6px 13px rgba(72, 104, 145, 0.24);
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 700;
+        outline: none;
+        transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+        white-space: nowrap;
+      }
+
+      button:hover:not(:disabled) {
+        filter: saturate(1.1) brightness(1.03);
+        transform: translateY(-1px);
+        box-shadow:
+          inset 1px 1px 1px rgba(255, 255, 255, 0.5),
+          7px 9px 18px rgba(72, 104, 145, 0.28);
+      }
+
+      button:active:not(:disabled) {
+        transform: translateY(1px);
+        box-shadow:
+          inset 4px 4px 8px rgba(32, 65, 110, 0.2),
+          inset -3px -3px 7px rgba(255, 255, 255, 0.22);
+      }
+
+      button.secondary {
+        color: #334155;
+        background: linear-gradient(145deg, #f8fbff, #dfe7f0);
+        box-shadow:
+          5px 5px 12px rgba(149, 164, 187, 0.34),
+          -5px -5px 12px rgba(255, 255, 255, 0.74);
+      }
+
+      button.batch {
+        min-height: 38px;
+        background: linear-gradient(135deg, #05a66b 0%, #13bfd0 100%);
+        box-shadow:
+          inset 1px 1px 1px rgba(255, 255, 255, 0.42),
+          7px 8px 16px rgba(37, 112, 132, 0.25);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        filter: grayscale(0.15);
+        opacity: 0.5;
+        transform: none;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 62px;
+        margin-top: 8px;
+        padding: 8px;
+        resize: vertical;
+        color: #475569;
+        background: #edf3f9;
+        border: 1px solid rgba(255, 255, 255, 0.78);
+        border-radius: 9px;
+        box-shadow:
+          inset 3px 3px 7px rgba(148, 163, 184, 0.22),
+          inset -3px -3px 7px rgba(255, 255, 255, 0.72);
+        font: 11px Menlo, Consolas, monospace;
+      }
+
+      .empty {
+        margin: 0;
+        padding: 18px;
+        color: #64748b;
+        background: rgba(247, 250, 253, 0.86);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 12px;
+        box-shadow:
+          8px 8px 18px rgba(149, 164, 187, 0.3),
+          -8px -8px 18px rgba(255, 255, 255, 0.72);
+      }
+
+      .placeholder {
+        min-height: 120px;
+        padding: 18px;
+        background: rgba(247, 250, 253, 0.86);
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 12px;
+        color: #64748b;
+        box-shadow:
+          8px 8px 18px rgba(149, 164, 187, 0.3),
+          -8px -8px 18px rgba(255, 255, 255, 0.72);
+      }
+
+      .placeholder::before {
+        display: block;
+        width: 34px;
+        height: 34px;
+        margin: 0 0 12px;
+        border: 3px solid rgba(37, 99, 235, 0.18);
+        border-top-color: #2563eb;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+        content: "";
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <h1>MIC video links</h1>
+        <p id="status">Scanning current tab...</p>
+      </header>
+      <div id="batch">
+        <div class="folder-row">
+          <label class="folder-label" for="folderName">保存到下载目录下的子文件夹</label>
+          <input id="folderName" type="text" value="MIC Course Videos" spellcheck="false">
+        </div>
+        <button type="button" class="batch" disabled>Download All MP4 (0)</button>
+        <button type="button" class="batch" disabled>Download All m3u8 (0)</button>
+        <button type="button" class="secondary" disabled>Copy All Links</button>
+      </div>
+      <div id="list">
+        <div class="placeholder">正在读取当前课程页的视频信息...</div>
+      </div>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,407 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ============================================
+   ARMOR Brand Color System
+   Ice-Blue Vision / 冰锋美学
+   ============================================ */
+
+:root {
+  --armor-ice: #A5D8FF;
+  --armor-blue: #55A7E9;
+  --armor-green: #95E05B;
+  --armor-gradient: linear-gradient(150deg, #55A7E9 0%, #95E05B 100%);
+  --armor-gradient-soft: linear-gradient(150deg, rgba(85, 167, 233, 0.08) 0%, rgba(149, 224, 91, 0.08) 100%);
+  --armor-blue-50: #E8F5FF;
+  --armor-blue-100: #CCEBFF;
+  --armor-blue-600: #3D8BD1;
+  --armor-surface: #F5F9FD;
+  --armor-surface-elevated: #FFFFFF;
+  --armor-border: #E1ECF5;
+  --armor-text-primary: #0F1B2E;
+  --armor-text-secondary: #4A6175;
+  --armor-text-muted: #8BA3B8;
+  --armor-error: #E85D5D;
+  --armor-error-soft: #FDE8E8;
+  --armor-shadow-sm: 0 1px 3px rgba(15, 27, 46, 0.04);
+  --armor-shadow-md: 0 4px 16px rgba(85, 167, 233, 0.10);
+  --armor-shadow-glow: 0 0 20px rgba(165, 216, 255, 0.35);
+}
+
+/* Animate.css overrides */
+body {
+  --animate-duration: 0.3s;
+}
+
+.field-item {
+  --animate-duration: 0.35s;
+}
+
+.animate__animated.animate__faster {
+  --animate-duration: 0.25s;
+}
+
+.animate__animated.animate__slower {
+  --animate-duration: 2s;
+}
+
+/* Staggered delays for field items */
+.field-item.animate__fadeInUp:nth-child(1) { animation-delay: 0s; }
+.field-item.animate__fadeInUp:nth-child(2) { animation-delay: 0.04s; }
+.field-item.animate__fadeInUp:nth-child(3) { animation-delay: 0.08s; }
+.field-item.animate__fadeInUp:nth-child(4) { animation-delay: 0.12s; }
+.field-item.animate__fadeInUp:nth-child(5) { animation-delay: 0.16s; }
+.field-item.animate__fadeInUp:nth-child(6) { animation-delay: 0.20s; }
+.field-item.animate__fadeInUp:nth-child(7) { animation-delay: 0.24s; }
+.field-item.animate__fadeInUp:nth-child(8) { animation-delay: 0.28s; }
+.field-item.animate__fadeInUp:nth-child(9) { animation-delay: 0.32s; }
+.field-item.animate__fadeInUp:nth-child(10) { animation-delay: 0.36s; }
+.field-item.animate__fadeInUp:nth-child(n+11) { animation-delay: 0.40s; }
+
+/* ============================================
+   Base
+   ============================================ */
+
+body {
+  width: 440px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  color: var(--armor-text-primary);
+  background: var(--armor-surface);
+}
+
+/* ============================================
+   Header — Guardian Shield
+   ============================================ */
+
+#header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  background: var(--armor-surface-elevated);
+  border-bottom: 1px solid var(--armor-border);
+  position: relative;
+}
+
+.header-accent {
+  width: 4px;
+  height: 26px;
+  background: var(--armor-gradient);
+  border-radius: 3px;
+}
+
+.header-icon {
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+
+.header-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--armor-text-primary);
+  letter-spacing: -0.2px;
+}
+
+/* ============================================
+   Content
+   ============================================ */
+
+#content {
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 16px 20px;
+  background: var(--armor-surface);
+}
+
+#content::-webkit-scrollbar {
+  width: 5px;
+}
+
+#content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#content::-webkit-scrollbar-thumb {
+  background: var(--armor-ice);
+  border-radius: 3px;
+}
+
+/* ============================================
+   Empty / Error States
+   ============================================ */
+
+#empty-state,
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--armor-text-muted);
+  font-size: 14px;
+}
+
+.empty-icon {
+  font-size: 32px;
+  color: var(--armor-ice);
+  margin-bottom: 4px;
+}
+
+.error .empty-icon {
+  color: var(--armor-error);
+}
+
+.error {
+  color: var(--armor-error);
+}
+
+/* ============================================
+   Field List
+   ============================================ */
+
+.field-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================================
+   Field Card — Precision Crafted
+   ============================================ */
+
+.field-item {
+  background: var(--armor-surface-elevated);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid var(--armor-border);
+  box-shadow: var(--armor-shadow-sm);
+  transition: box-shadow 0.25s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.field-item:hover {
+  box-shadow: var(--armor-shadow-md);
+  transform: translateY(-1px);
+  border-color: var(--armor-ice);
+}
+
+/* ============================================
+   Field Label — Radiant Pill
+   ============================================ */
+
+.field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--armor-blue);
+  background: var(--armor-blue-50);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.field-label i {
+  font-size: 10px;
+  opacity: 0.85;
+}
+
+/* ============================================
+   Field Display (read-only)
+   ============================================ */
+
+.field-display {
+  font-size: 14px;
+  color: var(--armor-text-secondary);
+  line-height: 1.6;
+  word-break: break-word;
+  cursor: pointer;
+  padding: 5px 10px;
+  margin: -5px -10px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.field-display:hover {
+  background: var(--armor-blue-50);
+}
+
+/* ============================================
+   Field Editor (edit mode)
+   ============================================ */
+
+.field-editor {
+  display: none;
+  width: 100%;
+  font-size: 14px;
+  color: var(--armor-text-secondary);
+  line-height: 1.6;
+  background: var(--armor-surface-elevated);
+  border: 2px solid var(--armor-blue);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.field-editor:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(85, 167, 233, 0.15);
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+#footer {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  background: var(--armor-surface-elevated);
+  border-top: 1px solid var(--armor-border);
+}
+
+.footer-left {
+  flex: 1 1 128px;
+  min-width: 118px;
+}
+
+.footer-right {
+  display: flex;
+  gap: 6px;
+  flex: 1 1 238px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+/* ============================================
+   Format Select
+   ============================================ */
+
+.format-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.format-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 13px;
+  color: var(--armor-text-muted);
+  pointer-events: none;
+}
+
+#format {
+  width: 100%;
+  padding: 8px 12px 8px 30px;
+  border: 1px solid var(--armor-border);
+  border-radius: 10px;
+  font-size: 13px;
+  background: var(--armor-surface);
+  color: var(--armor-text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#format:focus {
+  outline: none;
+  border-color: var(--armor-blue);
+  box-shadow: 0 0 0 3px rgba(85, 167, 233, 0.10);
+}
+
+#format:focus + .format-icon,
+.format-wrap:focus-within .format-icon {
+  color: var(--armor-blue);
+}
+
+/* ============================================
+   Buttons — Radiant Gradient
+   ============================================ */
+
+#copy-all,
+#screenshot,
+#wechat-share {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 70px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+/* Primary — Gradient */
+#copy-all {
+  background: var(--armor-gradient);
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  transition: filter 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+#copy-all:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: var(--armor-shadow-glow);
+}
+
+#copy-all:active {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+/* Secondary — Ice Surface */
+#screenshot,
+#wechat-share {
+  background: var(--armor-surface);
+  color: var(--armor-text-secondary);
+  border: 1px solid var(--armor-border);
+  padding: 8px 10px;
+  transition: all 0.2s ease;
+}
+
+#screenshot:hover,
+#wechat-share:hover {
+  background: var(--armor-blue-50);
+  border-color: var(--armor-ice);
+  color: var(--armor-blue);
+}
+
+#wechat-share:hover {
+  color: #1AAD19;
+}
+
+@media (max-width: 420px) {
+  .footer-left,
+  .footer-right {
+    flex-basis: 100%;
+  }
+
+  .footer-right {
+    justify-content: stretch;
+  }
+
+  #copy-all,
+  #screenshot,
+  #wechat-share {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

@@ -1,0 +1,85 @@
+diff -ru /Users/licat/.hermes/skills/mic-made-in-china-fill/SKILL.md hermes-skill/mic-made-in-china-fill/SKILL.md
+--- /Users/licat/.hermes/skills/mic-made-in-china-fill/SKILL.md	2026-05-21 16:01:19
++++ hermes-skill/mic-made-in-china-fill/SKILL.md	2026-05-22 12:16:03
+@@ -145,7 +145,7 @@
+ 
+ # FOB价格设置
+ # -- 价格类型由页面选择，插件根据提供的数据自动选择对应的单选模式：
+-# -- 一口价销售（模式0）：规格最小起订量、规格商品编码、规格库存、规格单价
++# -- 按规格价格销售/一口价销售（模式0）：规格最小起订量、规格商品编码、规格库存、规格单价
+ # -- 按采购数量-阶梯价销售（模式1）：价格区间N起订量/单价（所有区间共享1个库存）
+ # -- 按采购数量-区间价销售（模式2）：区间价最小起订量、区间价最低价、区间价最高价、区间价库存
+ 规格最小起订量：
+@@ -324,7 +324,7 @@
+ 规格3值：Plastic; Metal
+ ```
+ 
+-If the listing uses spec-based fixed price fields (visible under "一口价" mode in FOB价格设置), output only values provided by the source:
++If the listing uses spec-based fixed price fields (visible under "按规格价格销售/一口价销售" mode in FOB价格设置), output only values provided by the source. When `# 规格管理` creates multiple spec combinations, the plugin will apply these values to every generated SKU row and sync the hidden `prodSku` payload:
+ 
+ ```text
+ 规格最小起订量：10
+@@ -334,12 +334,18 @@
+ 
+ ### FOB Price Settings
+ 
+-The page has three pricing modes selected by radio buttons (`name="fobPriceType"`): Fixed price (一口价, value='0'), Ladder price (阶梯价, value='1'), Reference price (区间价, value='2'). The plugin detects which mode to use based on the fields provided in the source data:
++The page has three pricing modes selected by radio buttons (`name="fobPriceType"`): spec/fixed price (按规格价格销售/一口价销售, value='0'), ladder price (阶梯价, value='1'), and reference price (区间价, value='2'). The plugin detects which mode to use based on the fields provided in the source data:
+ 
+-- If `规格最小起订量` / `规格单价` / `规格库存` / `规格商品编码` are present → selects **一口价** mode
++- If `规格最小起订量` / `规格单价` / `规格库存` / `规格商品编码` are present → selects **按规格价格销售/一口价** mode. Use this when each SKU/spec combination should share the same MOQ, stock, and unit price.
+ - If `价格区间1起订量` / `价格区间1单价` / `价格区间1库存` are present → selects **阶梯价** mode
+ - If `区间价最低价` / `区间价最高价` / `区间价最小起订量` / `区间价库存` are present → selects **区间价** mode
+ 
++Do not mix fields from multiple FOB pricing modes in one product output. Choose exactly one mode based on the source material:
++
++- Use **按规格价格销售/一口价** when the source gives one MOQ/stock/unit price for all SKU/spec combinations.
++- Use **阶梯价** when the source gives quantity breaks such as 10/499/1000 with different unit prices. Output one shared `库存`.
++- Use **区间价** only when the source gives a price range such as minimum price and maximum price instead of exact ladder prices.
++
+ Only output price, stock, package dimensions, weight, port, sample, payment, production capacity, or HS code when provided by the user/source. Do not invent them.
+ 
+ Use numbers without currency symbols for price fields:
+@@ -473,7 +479,7 @@
+ 
+ # FOB价格设置
+ # -- 插件根据提供的字段自动选择三种模式之一：
+-# -- 模式0-一口价销售：规格最小起订量、规格商品编码、规格库存、规格单价
++# -- 模式0-按规格价格销售/一口价销售：规格最小起订量、规格商品编码、规格库存、规格单价
+ # -- 模式1-阶梯价销售：价格区间N起订量/单价（所有区间共享1个库存）
+ # -- 模式2-区间价销售：区间价最小起订量、区间价最低价、区间价最高价、区间价库存
+ 价格区间1起订量：10
+@@ -541,6 +547,7 @@
+ - Confirm fields unknown from the source are omitted.
+ - Confirm required product attribute fields are included: `认证`, `功率`, `发光颜色`, `电压`, `防护等级`, `运输包装`, `规格`, `商标`, `原产地`.
+ - Confirm custom attributes do not include `IP Rating`; use `防护等级` only.
++- Confirm `# FOB价格设置` uses exactly one pricing mode: either spec/fixed price fields, ladder price fields, or reference price fields. Do not mix mode fields.
+ - Confirm there is no commentary around the paste-ready block.
+ - Confirm unsupported fields (product images, destination region selector) are omitted.
+ - Confirm sample description is 45 characters or shorter.
+diff -ru /Users/licat/.hermes/skills/mic-made-in-china-fill/references/plugin-field-map.md hermes-skill/mic-made-in-china-fill/references/plugin-field-map.md
+--- /Users/licat/.hermes/skills/mic-made-in-china-fill/references/plugin-field-map.md	2026-05-20 11:52:27
++++ hermes-skill/mic-made-in-china-fill/references/plugin-field-map.md	2026-05-22 12:15:56
+@@ -49,13 +49,17 @@
+ | 规格名称 | `input[name='specName']` |
+ | 规格值 | `input[name='specValue']` list |
+ | # FOB价格设置 | `.bd.J-bd[data-anchor='skuFob']` |
+-| 规格最小起订量 | `input[name='skuMinOrder_one']` |
+-| 规格商品编码 | `input[name='skuCode_one']` |
+-| 规格库存 | `input[name='skuStock_one']` |
+-| 规格单价 | `input[name='skuPrice_one']` |
++| 规格最小起订量 | mode 0; `input[name='skuMinOrder']` for each generated SKU row, or `input[name='skuMinOrder_one']` without specs |
++| 规格商品编码 | mode 0; `input[name='skuCode']` for each generated SKU row, or `input[name='skuCode_one']` without specs |
++| 规格库存 | mode 0; `input[name='skuStock']` for each generated SKU row, or `input[name='skuStock_one']` without specs |
++| 规格单价 | mode 0; `input[name='skuPrice']` for each generated SKU row, or `input[name='skuPrice_one']` without specs |
+ | 价格区间N起订量 | `#JminOrderOfLadder{N-1}` |
+ | 价格区间N单价 | `#JpriceNewOfLadder{N-1}` |
+-| 价格区间1库存 | `#prodStockNewOfLadder0` |
++| 库存 / 价格区间N库存 | mode 1 shared stock; `#prodStockNewOfLadder0` |
++| 区间价最小起订量 | mode 2; `input[name='prodMinimumOrderOfBase']` |
++| 区间价最低价 | mode 2; `input[name='prodPriceNewStartOfBase']` |
++| 区间价最高价 | mode 2; `input[name='prodPriceNewEndOfBase']` |
++| 区间价库存 | mode 2; `input[name='prodStockNewOfBase']` |
+ | # 计量单位 | `.bd.J-bd[data-anchor='unit']` |
+ | 计量单位 | unit selects for ladder/base/negotiate modes: `prodMinimumOrderTypeOfLadder`, `prodMinimumOrderTypeOfBase`, `prodMinimumOrderTypeOfNegotiate` |
+ | # 包裹尺寸 | `.bd.J-bd[data-anchor='package']` |

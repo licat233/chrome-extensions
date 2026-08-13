@@ -1,0 +1,137 @@
+--- /Users/licat/chrome_extensions/made-in-china-bulk-fill/content.js	2026-05-20 17:54:50
++++ content.js	2026-05-22 11:15:49
+@@ -390,6 +390,7 @@
+       data: [dataItem]
+     };
+ 
++    triggerFieldFocus(textarea);
+     setNativeValue(textarea, JSON.stringify(next));
+     textarea.textContent = textarea.value;
+     dispatchEditableEvents(textarea);
+@@ -1078,6 +1079,7 @@
+       normalize(opt.textContent).includes("官方物流") && normalize(opt.textContent).includes("默认推荐")
+     );
+     if (defaultOption && shouldApply) {
++      triggerFieldFocus(select);
+       select.value = defaultOption.value;
+       dispatchEditableEvents(select);
+     }
+@@ -1151,6 +1153,7 @@
+   function fillSelectOrOther(select, value, block) {
+     const option = [...select.options].find((item) => sameOption(value, item.textContent) || sameOption(value, item.getAttribute("cz-html") || ""));
+     if (option) {
++      triggerFieldFocus(select);
+       select.value = option.value;
+       syncSelectAttribute(select);
+       dispatchEditableEvents(select);
+@@ -1159,6 +1162,7 @@
+ 
+     const other = [...select.options].find((item) => item.value === "-1" || normalize(item.textContent).includes("other"));
+     if (other) {
++      triggerFieldFocus(select);
+       select.value = other.value;
+       syncSelectAttribute(select);
+       dispatchEditableEvents(select);
+@@ -1318,7 +1322,7 @@
+     }
+ 
+     if (control.isContentEditable) {
+-      control.focus();
++      triggerFieldFocus(control);
+       control.textContent = fitControlValue(control, value);
+       dispatchEditableEvents(control);
+       return;
+@@ -1331,7 +1335,7 @@
+       return;
+     }
+ 
+-    control.focus();
++    triggerFieldFocus(control);
+     setNativeValue(control, fittedValue);
+     dispatchEditableEvents(control);
+ 
+@@ -1351,7 +1355,7 @@
+   }
+ 
+   function fillByUserLikeTextInput(control, value) {
+-    control.focus();
++    triggerFieldFocus(control);
+     control.select?.();
+     const inserted = document.execCommand?.("insertText", false, value);
+     if (!inserted) setNativeValue(control, value);
+@@ -1359,7 +1363,7 @@
+   }
+ 
+   function applyModuleTextareaValue(control, value) {
+-    control.focus();
++    triggerFieldFocus(control);
+     setNativeValue(control, fitControlValue(control, value));
+     dispatchEditableEvents(control);
+   }
+@@ -1381,6 +1385,7 @@
+   }
+ 
+   function fillSelect(select, value) {
++    triggerFieldFocus(select);
+     const normalizedValue = normalize(value);
+     const normalizedAliases = unitAliases(value).map(normalize);
+     const option = [...select.options].find((item) => {
+@@ -1442,6 +1447,7 @@
+   }
+ 
+   function fillChoice(control, value) {
++    triggerFieldFocus(control);
+     const type = (control.getAttribute("type") || "").toLowerCase();
+     const normalizedValue = normalize(value);
+     const nearby = normalize(getNearbyText(control));
+@@ -1473,11 +1479,49 @@
+   }
+ 
+   function dispatchEditableEvents(control) {
++    dispatchFieldEvent(control, "beforeinput", window.InputEvent || Event, { inputType: "insertText", data: null });
+     control.dispatchEvent(new Event("input", { bubbles: true }));
+     control.dispatchEvent(new Event("change", { bubbles: true }));
+-    control.blur();
++    triggerFieldBlur(control);
++  }
++
++  function triggerFieldFocus(control) {
++    if (!control || typeof control.dispatchEvent !== "function") return;
++    dispatchMouseIntent(control);
++    try {
++      control.focus?.();
++    } catch (_error) {
++      // Some hidden controls cannot be focused; synthetic focus events still notify validators.
++    }
++    dispatchFieldEvent(control, "focus", window.FocusEvent || Event);
++    dispatchFieldEvent(control, "focusin", window.FocusEvent || Event);
+   }
+ 
++  function triggerFieldBlur(control) {
++    if (!control || typeof control.dispatchEvent !== "function") return;
++    dispatchFieldEvent(control, "blur", window.FocusEvent || Event);
++    dispatchFieldEvent(control, "focusout", window.FocusEvent || Event);
++    try {
++      control.blur?.();
++    } catch (_error) {
++      // Ignore unfocusable controls.
++    }
++  }
++
++  function dispatchMouseIntent(control) {
++    for (const type of ["mouseover", "mouseenter", "mousedown", "mouseup", "click"]) {
++      control.dispatchEvent(new MouseEvent(type, { bubbles: type !== "mouseenter", cancelable: true, view: window }));
++    }
++  }
++
++  function dispatchFieldEvent(control, type, EventConstructor = Event, extra = {}) {
++    try {
++      control.dispatchEvent(new EventConstructor(type, { bubbles: type === "focusin" || type === "focusout" || type === "beforeinput", cancelable: true, ...extra }));
++    } catch (_error) {
++      control.dispatchEvent(new Event(type, { bubbles: true, cancelable: true }));
++    }
++  }
++
+   function getNearbyText(control) {
+     const parts = [];
+     let node = control;
