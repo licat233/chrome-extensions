@@ -1,51 +1,41 @@
 # Product Information Lookup Order for MIC Uploads
 
-When preparing MIC product upload data, follow this lookup sequence to ensure accuracy:
+This reference describes the current EAO source order for MIC product preparation.
 
-## 1. gbrain Query (Primary Source)
+## 1. Authoritative originals
 
-Query gbrain first for product knowledge that may already be structured from previous sessions:
+Use the actual product datasheet, manual, test/certification document, approved PI/commercial document, or explicit current user/company confirmation for exact values. These sources outrank existing MIC copy and AI inference.
 
-```bash
-# Example queries
-mcp_gbrain_query(query="HM-CSP-480 LED strip voltage power specifications")
-mcp_gbrain_search(query="CSP strip light 480LEDs")
-```
+## 2. WeKnora Document/RAG
 
-**Why first:** gbrain contains compiled truths from previous product analysis sessions, including extracted spec sheet data, PI pricing, and user-confirmed parameters.
+Use WeKnora to retrieve ARMOR product/company knowledge and locate grounded facts. A retrieval result does not upgrade an unsupported value into an authoritative technical fact. Conflicts with an original source remain visible.
 
-## 2. Product Knowledge Base V3
+## 3. Current MIC edit-page context
 
-If gbrain lacks data, check the Excel KB:
+For an existing listing, use the Chrome extension extraction with schema mic-product-edit-context/v1.
 
-**Path:** `~/Desktop/work/products/ARMOR_Product_Knowledge_Base_V3_*.xlsx`
+It is authoritative for current form fields, current standard/custom-property structure, current options, required flags and current page capabilities.
 
-**Sheet structure:**
-- Product specifications (voltage, power, dimensions, certifications)
-- SEO keywords and marketing copy
-- Pricing tiers and MOQ
-- Variant SKUs and relationships
+It is existing-state evidence for product/commercial values, not higher authority than current product originals.
 
-## 3. MIC Product Export CSV
+## 4. MIC Verified Keyword Library
 
-For existing MIC listings being updated or duplicated:
+For title/keyword work, read the relevant WeKnora Wiki page under operations/mic/keywords/*.
 
-**Path:** `~/Desktop/work/products/data/armor-MIC-products-*.csv`
+Only human-collected terms with source and collection date are VERIFIED_MIC_KEYWORD.
 
-**Use case:** Extract current field values, pricing, and category assignments from live MIC products.
+AI-generated related phrases are DERIVED_TERM and must never be described as hot, trending, high-volume or verified keywords.
 
-## 4. Session Search
+## 5. Ledger
 
-Search past sessions for product-specific discussions:
+Use Ledger to check prior MIC titles, keywords and optimization work when available. Ledger records what was done; it is not product-fact authority.
 
-```bash
-session_search(query="HM-CSP-480 specifications")
-```
+## 6. User confirmation
 
-## 5. User Confirmation (Final Resort)
+Ask for confirmation when a material field is missing or conflicting and the task cannot be completed safely without it.
 
-If critical parameters (voltage, power, certifications, pricing) are missing after all above sources, explicitly ask the user:
+Never fabricate technical values, certifications, packaging, pricing, MOQ, logistics, warranty or commercial terms.
 
-> "[Parameter] not found in product KB or gbrain. Please confirm: [specific question]"
+## Deprecated source patterns
 
-**Never fabricate:** Voltage, power, certifications, dimensions, pricing, or HS codes must come from authoritative sources, never invented.
+Do not use gbrain, old desktop product spreadsheets, Obsidian/Vault paths, or session memory as current EAO product-fact authority.

@@ -182,6 +182,7 @@
 
     return {
       schema: "mic-product-edit-context/v1",
+      contractVersion: "1.1",
       purpose: "供 AI 理解当前 MIC 产品编辑页的可回填表单字段，并基于原值逐字段优化",
       extractedAt: new Date().toISOString(),
       page: { category },
@@ -198,7 +199,36 @@
         customFieldCount: customFields.length,
         populatedFieldCount: populatedFields.length
       },
+      capabilities: extractPageCapabilities(),
       sections: extractedSections
+    };
+  }
+
+  function extractPageCapabilities() {
+    const keywordRoot = findSectionRoot("keywords") || findSectionRoot("basicInfo");
+    const keywordControls = keywordRoot
+      ? [...keywordRoot.querySelectorAll("textarea[name=\'prodKeyword\'], .J-keyword-value")].filter(isVisible)
+      : [];
+    const highlightRoot = findSectionRoot("highlights");
+    const faqRoot = findSectionRoot("faq");
+    const highlightControls = highlightRoot
+      ? [...highlightRoot.querySelectorAll("textarea.highlight-text, textarea[placeholder=\'请输入产品亮点\']")].filter(isDisplayed)
+      : [];
+    const faqBlocks = faqRoot ? [...faqRoot.querySelectorAll(".atom-faq")] : [];
+
+    return {
+      centerWordMode: "single",
+      centerWordCandidateCount: getCenterWordControls().length,
+      keywordSlotsRendered: keywordControls.length,
+      keywordAddSupported: Boolean(keywordRoot?.querySelector(".J-keyword-add")),
+      keywordFillLimit: 20,
+      highlightSlotsRendered: highlightControls.length,
+      highlightAddSupported: Boolean(highlightRoot && findAddHighlightButton(highlightRoot)),
+      highlightFillLimit: 20,
+      faqSlotsRendered: faqBlocks.length,
+      faqAddSupported: Boolean(faqRoot && findAddFaqButton(faqRoot)),
+      faqFillLimit: 10,
+      productDetailBulkFill: false
     };
   }
 

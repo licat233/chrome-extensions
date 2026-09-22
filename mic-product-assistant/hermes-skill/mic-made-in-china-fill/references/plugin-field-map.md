@@ -21,7 +21,7 @@ The Chrome extension prioritizes these selectors when filling the product upload
 | --- | --- |
 | # 基本信息 | `.bd.J-bd:has([data-anchor='prodName'])` |
 | 产品名称 | `textarea[name='prodName']` |
-| 关键词 | `textarea[name='prodKeyword']` list, max 10 slots |
+| 关键词 | `textarea[name='prodKeyword']` list; current plugin fill limit 20, runtime context reports rendered slots/add capability |
 | 产品型号 | `input[name='prodModel']` |
 | # 产品展示 | image/video upload, not auto-filled by the plugin |
 | # 产品亮点 | `#highlightRoot` |
@@ -83,7 +83,7 @@ The Chrome extension prioritizes these selectors when filling the product upload
 | 海关编码 | `input[name='hsCode']` |
 | # FAQ | `#faqRoot` |
 | FAQ问题/答案 | `#faqRoot textarea` |
-| # 产品详情 | `.prod-desc[data-anchor='prodDescript']` |
-| 产品详情 | detail submission fields `textarea[name='newDescStr']` / `textarea[name='newDescHtml']`, with legacy `#detailRoot` fallback |
+| # 产品详情 | legacy/non-canonical Bulk Fill path; manual handling preferred |
+| 产品详情 | legacy fill support may exist, but canonical EAO Bulk Fill output omits this rich-text module |
 
 Use this reference only when debugging why a generated field did not fill.
