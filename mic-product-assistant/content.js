@@ -221,13 +221,13 @@
       centerWordCandidateCount: getCenterWordControls().length,
       keywordSlotsRendered: keywordControls.length,
       keywordAddSupported: Boolean(keywordRoot?.querySelector(".J-keyword-add")),
-      keywordFillLimit: 20,
+      keywordPluginInputCeiling: 20,
       highlightSlotsRendered: highlightControls.length,
       highlightAddSupported: Boolean(highlightRoot && findAddHighlightButton(highlightRoot)),
-      highlightFillLimit: 20,
+      highlightPluginInputCeiling: 20,
       faqSlotsRendered: faqBlocks.length,
       faqAddSupported: Boolean(faqRoot && findAddFaqButton(faqRoot)),
-      faqFillLimit: 10,
+      faqPluginInputCeiling: 10,
       productDetailBulkFill: false
     };
   }

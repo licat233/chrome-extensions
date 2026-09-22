@@ -75,8 +75,8 @@ Do not output 3-6 center words.
 Use keyword decisions produced by the MIC business workflow.
 
 Rules:
-- runtime capabilities determine current supported capacity when available;
-- the plugin fill implementation currently caps accepted keyword inputs at 20;
+- MIC business rules determine how many keywords should be used;
+- keywordPluginInputCeiling is only the extension protocol's technical ceiling (currently 20), not the MIC platform maximum or a fill target;
 - never fill all available slots merely because they exist;
 - never invent hot keywords to reach a quota;
 - human-verified keywords and AI-derived terms remain distinguishable upstream.

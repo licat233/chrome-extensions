@@ -21,7 +21,7 @@ The Chrome extension prioritizes these selectors when filling the product upload
 | --- | --- |
 | # 基本信息 | `.bd.J-bd:has([data-anchor='prodName'])` |
 | 产品名称 | `textarea[name='prodName']` |
-| 关键词 | `textarea[name='prodKeyword']` list; current plugin fill limit 20, runtime context reports rendered slots/add capability |
+| 关键词 | `textarea[name='prodKeyword']` list; plugin technical input ceiling 20; this is not the MIC platform keyword maximum. Runtime context reports rendered slots/add capability |
 | 产品型号 | `input[name='prodModel']` |
 | # 产品展示 | image/video upload, not auto-filled by the plugin |
 | # 产品亮点 | `#highlightRoot` |
