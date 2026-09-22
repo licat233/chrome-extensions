@@ -59,13 +59,13 @@ jobs:
             done
 
             cat > "$target/INSTALL.txt" <<'EOF'
-Chrome installation:
-1. Extract this ZIP.
-2. Open chrome://extensions/
-3. Enable Developer mode.
-4. Click "Load unpacked".
-5. Select this extracted extension folder.
-EOF
+          Chrome installation:
+          1. Extract this ZIP.
+          2. Open chrome://extensions/
+          3. Enable Developer mode.
+          4. Click "Load unpacked".
+          5. Select this extracted extension folder.
+          EOF
 
             (
               cd stage
@@ -97,28 +97,28 @@ EOF
         shell: bash
         run: |
           cat > RELEASE_NOTES.md <<'EOF'
-# Chrome Extensions Pack — 2026-09-22
-
-独立下载包：
-
-- **ARMOR Form Extractor v1.0**
-- **MIC Product Assistant v0.3.0**
-  - 支持导出当前产品 Context
-  - 支持导出 `mic-category-form-schema/v1`
-  - 可用于 EAO 的 MIC Category Form Schema 工作流
-- **MIC Course Video Link Downloader v1.0.0**
-
-## 安装
-
-1. 下载需要的 ZIP；
-2. 解压；
-3. 打开 `chrome://extensions/`；
-4. 开启“开发者模式”；
-5. 点击“加载已解压的扩展程序”；
-6. 选择解压后的插件目录。
-
-Release ZIP 只包含 Chrome 运行所需文件，不包含仓库中的开发补丁、Hermes Skill、MHTML 调试资料等开发文件。
-EOF
+          # Chrome Extensions Pack — 2026-09-22
+          
+          独立下载包：
+          
+          - **ARMOR Form Extractor v1.0**
+          - **MIC Product Assistant v0.3.0**
+            - 支持导出当前产品 Context
+            - 支持导出 `mic-category-form-schema/v1`
+            - 可用于 EAO 的 MIC Category Form Schema 工作流
+          - **MIC Course Video Link Downloader v1.0.0**
+          
+          ## 安装
+          
+          1. 下载需要的 ZIP；
+          2. 解压；
+          3. 打开 `chrome://extensions/`；
+          4. 开启“开发者模式”；
+          5. 点击“加载已解压的扩展程序”；
+          6. 选择解压后的插件目录。
+          
+          Release ZIP 只包含 Chrome 运行所需文件，不包含仓库中的开发补丁、Hermes Skill、MHTML 调试资料等开发文件。
+          EOF
 
       - name: Create or update GitHub Release
         env:
