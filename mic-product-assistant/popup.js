@@ -2,6 +2,7 @@ const bulkText = document.querySelector("#bulkText");
 const fillButton = document.querySelector("#fill");
 const clearButton = document.querySelector("#clear");
 const extractButton = document.querySelector("#extract");
+const extractSchemaButton = document.querySelector("#extractSchema");
 const pasteAndFillButton = document.querySelector("#pasteAndFill");
 const progressWrap = document.querySelector("#progressWrap");
 const progressLabel = progressWrap.querySelector(".progress-label");
@@ -49,12 +50,20 @@ fillButton.addEventListener("click", async () => {
 });
 
 extractButton.addEventListener("click", async () => {
+  await extractJsonToEditor("MIC_PRODUCT_INFO_EXTRACT", "正在提取当前产品信息...");
+});
+
+extractSchemaButton.addEventListener("click", async () => {
+  await extractJsonToEditor("MIC_CATEGORY_FORM_SCHEMA_EXTRACT", "正在导出类别表单结构...");
+});
+
+async function extractJsonToEditor(type, progressMessage) {
   setButtonsDisabled(true);
-  setProgress(true, "正在提取当前产品信息...");
+  setProgress(true, progressMessage);
   try {
-    const result = await sendToPage("MIC_PRODUCT_INFO_EXTRACT");
+    const result = await sendToPage(type);
     if (!result?.ok || !result?.data) {
-      throw new Error(result?.error || "页面没有返回可提取的产品信息");
+      throw new Error(result?.error || "页面没有返回可提取的数据");
     }
 
     const text = JSON.stringify(result.data, null, 2);
@@ -75,7 +84,7 @@ extractButton.addEventListener("click", async () => {
     setProgress(false);
     setButtonsDisabled(false);
   }
-});
+}
 
 clearButton.addEventListener("click", async () => {
   bulkText.value = "";
@@ -122,14 +131,15 @@ async function fillFromText(text) {
 
 function looksLikeExtractedContext(text) {
   try {
-    return JSON.parse(text)?.schema === "mic-product-edit-context/v1";
+    const schema = JSON.parse(text)?.schema;
+    return schema === "mic-product-edit-context/v1" || schema === "mic-category-form-schema/v1";
   } catch (_error) {
     return false;
   }
 }
 
 function setButtonsDisabled(disabled) {
-  [extractButton, fillButton, clearButton, pasteAndFillButton].forEach((button) => {
+  [extractButton, extractSchemaButton, fillButton, clearButton, pasteAndFillButton].forEach((button) => {
     button.disabled = disabled;
   });
 }

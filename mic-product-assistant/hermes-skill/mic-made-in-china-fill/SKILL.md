@@ -1,6 +1,6 @@
 ---
 name: mic-made-in-china-fill
-description: Generate paste-ready text for MIC Product Assistant from current MIC edit-page context and source-grounded product decisions. This Skill owns the Chrome Bulk Fill text protocol only; it is not ARMOR product-fact authority and does not invent hot keywords.
+description: Generate paste-ready text for MIC Product Assistant from an actual current edit-page context or a captured MIC category form schema. This Skill owns the Chrome Bulk Fill text protocol only; it is not ARMOR product-fact authority, category-template authority, or keyword-popularity authority.
 ---
 
 # MIC Product Assistant — Bulk Fill Protocol
@@ -9,101 +9,88 @@ description: Generate paste-ready text for MIC Product Assistant from current MI
 
 Convert already-decided MIC product data into the exact plain-text format consumed by the Chrome extension.
 
-In EAO, business decisions belong to armor-mic-product-optimization:
-- ARMOR facts -> authoritative originals / WeKnora Document/RAG;
-- verified MIC keywords -> WeKnora Wiki operations/mic/keywords/*;
-- current MIC fields/options -> mic-product-edit-context/v1;
-- prior work -> Ledger.
+In EAO:
+- ARMOR facts come from authoritative originals / WeKnora Document-RAG;
+- MIC platform rules and verified keywords come from WeKnora Wiki;
+- current listing structure comes from `mic-product-edit-context/v1`;
+- reusable new-listing structure comes from `mic-category-form-schema/v1`;
+- prior work comes from Ledger;
+- `armor-mic-product-optimization` makes the business decision.
 
-This Skill does not replace those sources.
+This Skill only translates the final decision into Bulk Fill text.
 
-## Current page contract
+## Structural contract priority
 
-When the user supplies extracted JSON with schema mic-product-edit-context/v1, use it as the current form contract.
+Use exactly one structural authority in this order:
 
-Prefer:
-- bulkFillFieldName;
-- current field presence;
-- required;
-- current options;
-- capabilities when present.
+1. Current `mic-product-edit-context/v1` when supplied.
+2. Matching `mic-category-form-schema/v1` for the target MIC category.
+3. If neither exists, do not fall back to a generic MIC field template. Return `MIC_FORM_SCHEMA_REQUIRED`.
 
-From contract version 1.1:
-- center word is single-select;
-- keyword capacity is read from runtime capabilities when available;
-- plugin fill limit is not a target quota;
-- absent fields must not be forced from stale templates.
+Current edit-page Context outranks a saved Category Schema because MIC can change category fields.
 
-If a field is not present in current context, omit it unless the user is creating a new listing and has separately confirmed the target field/category.
+## Category Form Schema
+
+`mic-category-form-schema/v1` is structure only.
+
+It contains field names, `bulkFillFieldName`, required flags, control types, current options and capabilities, but it intentionally removes current product values.
+
+The Chrome exporter also excludes current product user-added custom attributes so one product's custom fields do not silently become category-wide requirements.
+
+When generating a new listing from a Category Schema:
+- output only sections/fields represented by that schema, except repeatable rows explicitly supported by its capabilities;
+- use exact current option text when options are provided;
+- do not inject fields from an old generic template;
+- do not use the schema as evidence for product values.
+
+## Current edit-page Context
+
+For `mic-product-edit-context/v1`:
+- use fields actually present;
+- use `bulkFillFieldName`;
+- respect current `required` and `options`;
+- respect capabilities when present;
+- omit stale fields absent from the current page.
 
 ## Output contract
 
 Return plain text only for plugin-ready requests.
 
-Use exact section headings, in this canonical order when they contain fields:
-
-1. # 基本信息
-2. # 产品亮点
-3. # 产品属性
-4. # 规格管理
-5. # FOB价格设置
-6. # 计量单位
-7. # 包裹尺寸
-8. # 发货效率信息
-9. # 样品单交易设置
-10. # 其他信息设置
-11. # FAQ
-
-Each field line uses 字段名：内容.
-
-Use semicolons for multi-value fields.
+Use `# 板块名称` plus `字段名：内容` lines. Include only sections that contain fields supported by the chosen structural contract.
 
 Do not include Markdown tables, JSON, code fences, commentary or empty fields inside the paste-ready output.
 
-The canonical Bulk Fill contract omits 产品展示, 运费信息/freight-template mutation, and 产品详情 rich-text modules. Those remain manual/separate work even if legacy code paths can still populate some text fields.
+The canonical Bulk Fill contract omits Product Display, freight-template mutation and Product Details rich-text modules.
 
 ## Center word
 
-Output exactly one center word.
-
-When the extracted context provides center-word candidates, the chosen value must match one of those candidates. The plugin selects the first matching requested value and synchronizes a single selection.
-
-Do not output 3-6 center words.
+Output one center word only. When candidates are supplied by the current Context/Schema, select from those candidates.
 
 ## Keywords
 
-Use keyword decisions produced by the MIC business workflow.
+Keyword quantity and priority come from current MIC business rules, not from the plugin's technical ceiling.
 
-Rules:
-- MIC business rules determine how many keywords should be used;
-- keywordPluginInputCeiling is only the extension protocol's technical ceiling (currently 20), not the MIC platform maximum or a fill target;
-- never fill all available slots merely because they exist;
-- never invent hot keywords to reach a quota;
-- human-verified keywords and AI-derived terms remain distinguishable upstream.
+`keywordPluginInputCeiling` only describes how many inputs the extension can technically process.
 
-A plugin-ready field may use 关键词：term 1; term 2; term 3 or numbered keyword fields when current context requires them.
+Never invent hot/trending/high-volume claims to fill slots.
 
 ## Attributes and options
 
-For current edit pages:
-- MIC standard attributes come from current mic_standard_property fields;
-- fixed MIC attributes come from current mic_builtin_property fields;
-- user-added custom attributes come from user_added_custom_attribute;
-- select/radio/checkbox values should use current page option text.
+Use only attributes represented by the current Context/Category Schema.
 
-Do not create duplicate custom attributes for a meaning already represented by a standard property.
+Do not duplicate a standard property as a custom attribute.
+
+A Category Schema's field presence does not prove a product-specific value. Values still require upstream product evidence.
 
 ## Specifications and pricing
 
-Use only supplied/source-grounded values.
-
-FOB output must use exactly one pricing mode: spec/fixed price, ladder price, or range price. Do not mix modes.
+Use only source-grounded values and exactly one pricing mode.
 
 ## Fact safety
 
 Never default or invent port, price, MOQ, stock, package dimensions/weight, lead time, samples, payment terms, production capacity, HS code, certifications, IP rating, electrical/performance values or warranty.
 
-If the source does not support a value, omit it.
+Unknown values are omitted.
 
 ## Action boundary
 

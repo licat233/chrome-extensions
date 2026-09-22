@@ -26,16 +26,12 @@
           <span>产品资料</span>
           <span>字段名：字段值</span>
         </div>
-        <textarea id="bulkText" spellcheck="false" placeholder="粘贴产品资料，例如：
-产品名称：Dynamic Full Color LCD Electronic Shelf Label
-关键词：Full Color ESL; LCD Price Tag; Inventory Management Display
-产品型号：HM-2026-02
-产品亮点1：Full-color LCD screen for dynamic retail pricing.
-港口：Huangpu"></textarea>
+        <textarea id="bulkText" spellcheck="false" placeholder="可粘贴 Bulk Fill 文本，也可提取当前产品 Context 或导出类别表单 Schema。"></textarea>
       </section>
 
       <div class="actions">
-        <button id="extract" class="button button-extract" type="button">一键提取并复制</button>
+        <button id="extract" class="button" type="button">提取当前产品</button>
+        <button id="extractSchema" class="button" type="button">导出类别表单</button>
         <button id="fill" class="button" type="button">填充当前页面</button>
         <button id="clear" class="button" type="button">清空输入框</button>
       </div>

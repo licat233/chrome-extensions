@@ -104,6 +104,15 @@
       return false;
     }
 
+    if (message.type === "MIC_CATEGORY_FORM_SCHEMA_EXTRACT") {
+      try {
+        sendResponse({ ok: true, data: extractCategoryFormSchema() });
+      } catch (error) {
+        sendResponse({ ok: false, error: error.message });
+      }
+      return false;
+    }
+
     if (message.type !== "MIC_BULK_FILL_APPLY") {
       return false;
     }
@@ -201,6 +210,82 @@
       },
       capabilities: extractPageCapabilities(),
       sections: extractedSections
+    };
+  }
+
+  function extractCategoryFormSchema() {
+    const context = extractProductEditContext();
+    const excludedCurrentProductCustomAttributes = [];
+    const excludedNonBulkFillFields = [];
+
+    const sections = (context.sections || [])
+      .map((section) => {
+        const fields = (section.fields || []).flatMap((field) => {
+          const bulkFillFieldName = field.bulkFillFieldName || field.fieldName;
+
+          if (field.fieldOrigin === "user_added_custom_attribute") {
+            excludedCurrentProductCustomAttributes.push({
+              section: section.name,
+              fieldName: field.fieldName
+            });
+            return [];
+          }
+
+          if (["产品分组", "FOB价格模式"].includes(bulkFillFieldName)) {
+            excludedNonBulkFillFields.push({
+              section: section.name,
+              fieldName: field.fieldName
+            });
+            return [];
+          }
+
+          return [{
+            fieldName: field.fieldName,
+            bulkFillFieldName,
+            fieldOrigin: field.fieldOrigin,
+            fieldType: field.fieldType,
+            required: Boolean(field.required),
+            controlType: field.controlType,
+            ...(field.options?.length ? { options: field.options } : {}),
+            ...(field.domLocator ? { domLocator: field.domLocator } : {})
+          }];
+        });
+
+        if (!fields.length && !section.exists) return null;
+        return {
+          name: section.name,
+          ...(section.exists ? { exists: true } : {}),
+          fields
+        };
+      })
+      .filter(Boolean);
+
+    const fields = sections.flatMap((section) => section.fields);
+    const standardProperties = fields.filter((field) => field.fieldOrigin === "mic_standard_property");
+
+    return {
+      schema: "mic-category-form-schema/v1",
+      contractVersion: "1.0",
+      purpose: "供 AI 复用某个 MIC 类别的真实表单结构；不包含当前产品值，不作为产品事实来源",
+      capturedAt: context.extractedAt || new Date().toISOString(),
+      category: {
+        label: context.page?.category || ""
+      },
+      source: {
+        kind: "mic-product-edit-context/v1",
+        productValuesRemoved: true,
+        userAddedCustomAttributesExcluded: true,
+        nonBulkFillFieldsExcluded: true
+      },
+      summary: {
+        sectionCount: sections.length,
+        fieldCount: fields.length,
+        standardPropertyCount: standardProperties.length,
+        excludedCurrentProductCustomAttributeCount: excludedCurrentProductCustomAttributes.length,
+        excludedNonBulkFillFieldCount: excludedNonBulkFillFields.length
+      },
+      capabilities: context.capabilities || {},
+      sections
     };
   }
 
