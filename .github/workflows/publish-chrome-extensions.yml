@@ -32,7 +32,7 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.release_tag }}" ]]; then
             tag="${{ inputs.release_tag }}"
           else
-            tag="extensions-2026.09.22"
+            tag="extensions-$(date -u +%Y.%m.%d)"
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
@@ -97,16 +97,18 @@ jobs:
         shell: bash
         run: |
           cat > RELEASE_NOTES.md <<'EOF'
-          # Chrome Extensions Pack — 2026-09-22
+          # Chrome Extensions Pack — __RELEASE_DATE__
           
           独立下载包：
           
-          - **ARMOR Form Extractor v1.0**
-          - **MIC Product Assistant v0.3.0**
+          - **ARMOR Form Extractor v__FORM_VERSION__**
+          - **MIC Product Assistant v__MIC_VERSION__**
             - 支持导出当前产品 Context
             - 支持导出 `mic-category-form-schema/v1`
             - 可用于 EAO 的 MIC Category Form Schema 工作流
-          - **MIC Course Video Link Downloader v1.0.0**
+            - v0.3.1：最多回填 12 组 FAQ（由页面实际可添加行数决定）
+            - v0.3.1：标准属性匹配失败且没有自定义输入框时，不再虚报成功
+          - **MIC Course Video Link Downloader v__VIDEO_VERSION__**
           
           ## 安装
           
@@ -119,6 +121,10 @@ jobs:
           
           Release ZIP 只包含 Chrome 运行所需文件，不包含仓库中的开发补丁、Hermes Skill、MHTML 调试资料等开发文件。
           EOF
+          sed -i "s/__RELEASE_DATE__/$(date -u +%Y-%m-%d)/g" RELEASE_NOTES.md
+          sed -i "s/__FORM_VERSION__/$(jq -r '.version' armor-form-extractor/manifest.json)/g" RELEASE_NOTES.md
+          sed -i "s/__MIC_VERSION__/$(jq -r '.version' mic-product-assistant/manifest.json)/g" RELEASE_NOTES.md
+          sed -i "s/__VIDEO_VERSION__/$(jq -r '.version' mic-video-link-downloader/manifest.json)/g" RELEASE_NOTES.md
 
       - name: Create or update GitHub Release
         env:
@@ -129,7 +135,7 @@ jobs:
           set -euo pipefail
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release edit "$RELEASE_TAG" \
-              --title "Chrome Extensions Pack — 2026-09-22" \
+              --title "Chrome Extensions Pack — $(date -u +%Y-%m-%d)" \
               --notes-file RELEASE_NOTES.md
             gh release upload "$RELEASE_TAG" dist/* --clobber
           else
