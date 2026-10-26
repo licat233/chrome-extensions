@@ -118,6 +118,7 @@ jobs:
           4. 开启“开发者模式”；
           5. 点击“加载已解压的扩展程序”；
           6. 选择解压后的插件目录。
+          7. 更新后在 chrome://extensions/ 重新加载插件，并刷新 MIC 产品编辑页。
           
           Release ZIP 只包含 Chrome 运行所需文件，不包含仓库中的开发补丁、Hermes Skill、MHTML 调试资料等开发文件。
           EOF
