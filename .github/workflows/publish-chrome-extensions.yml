@@ -141,6 +141,6 @@ jobs:
           else
             gh release create "$RELEASE_TAG" dist/* \
               --target "$GITHUB_SHA" \
-              --title "Chrome Extensions Pack — 2026-09-22" \
+              --title "Chrome Extensions Pack — $(date -u +%Y-%m-%d)" \
               --notes-file RELEASE_NOTES.md
           fi
