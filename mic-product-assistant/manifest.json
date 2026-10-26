@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "MIC Product Assistant",
   "description": "Extract, understand, and fill Made-in-China product edit page fields.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

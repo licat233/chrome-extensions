@@ -11,7 +11,7 @@
 3. 点击“加载已解压的扩展程序”
 4. 选择这个文件夹：
 
-   `/Users/licat/chrome_extensions/mic-product-assistant`
+   ``<插件解压目录>/mic-product-assistant``
 
 ## 使用
 
@@ -103,3 +103,11 @@
 ## 推荐入口
 
 在 EAO 中优先使用 `armor-mic-product-optimization` 做产品事实、关键词、类别 Schema 和 Listing 决策；本仓库中的 `mic-made-in-china-fill` 只维护 Chrome Bulk Fill 文本协议，不再承担产品知识或 MIC 运营策略。
+
+## 0.3.1｜FAQ 与标准属性回填保护
+
+- FAQ 技术回填上限由 10 组增加到 12 组；实际可回填数量仍取决于编辑页存在的 FAQ 行与添加按钮。
+- 当前编辑上下文中的 MIC 标准属性新增 `otherInputSupported`，表示此字段在提取时是否存在实际的“其他”自定义输入框。
+- 当目标值不在标准属性下拉选项内，且页面不存在自定义输入控件时，插件不再仅选择 `Other` 并把字段虚报为已完成。
+- 更新后在 Chrome 扩展程序页面点击“重新加载”，重新提取 MIC 产品 JSON，以获取正确的 `faqPluginInputCeiling: 12` 和自定义输入能力信息。
+- **注意**：插件只负责表单字段映射，不会验证产品型号、认证或价格。提交 MIC 页面前仍需检查实际保存结果。

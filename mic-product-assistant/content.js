@@ -312,7 +312,7 @@
       highlightPluginInputCeiling: 20,
       faqSlotsRendered: faqBlocks.length,
       faqAddSupported: Boolean(faqRoot && findAddFaqButton(faqRoot)),
-      faqPluginInputCeiling: 10,
+      faqPluginInputCeiling: 12,
       productDetailBulkFill: false
     };
   }
@@ -386,6 +386,7 @@
         controlType,
         value,
         options,
+        otherInputSupported: Boolean(other),
         domLocator: getDomLocator(select || boxes[0])
       });
     });
@@ -1175,7 +1176,7 @@
 
   async function fillFaq(exactGet, shouldApply, filled) {
     const faqValues = [];
-    for (let index = 0; index < 10; index += 1) {
+    for (let index = 0; index < 12; index += 1) {
       const question = exactGet(`FAQ问题${index + 1}`, `问题${index + 1}`, `faq question ${index + 1}`);
       const answer = exactGet(`FAQ答案${index + 1}`, `答案${index + 1}`, `faq answer ${index + 1}`);
       if (!question && !answer) continue;
@@ -1293,7 +1294,7 @@
         }
       } else {
         const select = block.querySelector("select");
-        if (select && shouldApply) fillSelectOrOther(select, value, block);
+        if (!select || !fillSelectOrOther(select, value, block, shouldApply)) continue;
       }
 
       filled.push({ key, value, target: `.J-stand-prop ${english}`, score: 120 });
@@ -1324,7 +1325,7 @@
         }
       } else {
         const select = block.querySelector("select");
-        if (select && shouldApply) fillSelectOrOther(select, value, block);
+        if (!select || !fillSelectOrOther(select, value, block, shouldApply)) continue;
       }
 
       filled.push({ key: label || english, value, target: `.J-stand-prop ${english || label}`, score: 115 });
@@ -2260,29 +2261,33 @@
     });
   }
 
-  function fillSelectOrOther(select, value, block) {
+  function fillSelectOrOther(select, value, block, shouldApply = true) {
     const option = [...select.options].find((item) => sameOption(value, item.textContent) || sameOption(value, item.getAttribute("cz-html") || ""));
-    if (option) {
-      triggerFieldFocus(select);
-      select.value = option.value;
-      syncSelectAttribute(select);
-      dispatchEditableEvents(select);
-      return;
+    if (option && normalize(value) !== "other") {
+      if (shouldApply) {
+        triggerFieldFocus(select);
+        select.value = option.value;
+        syncSelectAttribute(select);
+        dispatchEditableEvents(select);
+      }
+      return true;
     }
 
+    // Do not claim a field was filled by silently selecting Other.
+    // Only use Other when a real free-text companion control exists.
     const other = [...select.options].find((item) => item.value === "-1" || normalize(item.textContent).includes("other"));
-    if (other) {
+    const otherInput = block.querySelector("input.J-prop-other, input[name='industryPropOtherValue']");
+    if (!other || !otherInput || normalize(value) === "other") return false;
+    if (shouldApply) {
       triggerFieldFocus(select);
       select.value = other.value;
       syncSelectAttribute(select);
       dispatchEditableEvents(select);
-      const otherInput = block.querySelector("input.J-prop-other, input[name='industryPropOtherValue']");
-      if (otherInput) {
-        otherInput.disabled = false;
-        otherInput.style.display = "";
-        applyValue(otherInput, value, "Other");
-      }
+      otherInput.disabled = false;
+      otherInput.style.display = "";
+      applyValue(otherInput, value, "Other");
     }
+    return true;
   }
 
   function sameOption(value, label) {
