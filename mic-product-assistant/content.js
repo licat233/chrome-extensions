@@ -303,6 +303,8 @@
       ? [...highlightRoot.querySelectorAll("textarea.highlight-text, textarea[placeholder=\'请输入产品亮点\']")].filter(isDisplayed)
       : [];
     const faqBlocks = faqRoot ? [...faqRoot.querySelectorAll(".atom-faq")] : [];
+    const customRoot = findSectionRoot("customProperties");
+    const customRows = customRoot ? [...customRoot.querySelectorAll(".J-selfprop")] : [];
 
     return {
       centerWordMode: "single",
@@ -310,6 +312,10 @@
       keywordSlotsRendered: keywordControls.length,
       keywordAddSupported: Boolean(keywordRoot?.querySelector(".J-keyword-add")),
       keywordPluginInputCeiling: 20,
+      customAttributeSlotsRendered: customRows.length,
+      customAttributeAddSupported: Boolean(customRoot?.querySelector(".J-prop-add") ||
+        customRows.some((row) => !row.querySelector("input[name='customPropName']")?.value.trim())),
+      customAttributePluginInputCeiling: 15,
       highlightSlotsRendered: highlightControls.length,
       highlightAddSupported: Boolean(highlightRoot && findAddHighlightButton(highlightRoot)),
       highlightPluginInputCeiling: 20,
