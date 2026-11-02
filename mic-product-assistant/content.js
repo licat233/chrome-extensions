@@ -168,6 +168,9 @@
       ["单个包裹高", "input[name='packHeight']"],
       ["单个包裹毛重", "input[name='grossWeight']"]
     ]);
+    extractSimpleSection(addSection("运费信息"), addField, "shipping", [
+      ["运费模板", "select[name='logTemplateId']"]
+    ]);
     extractDelivery(addSection("发货效率信息"), addField);
     extractSample(addSection("样品单交易设置"), addField);
     extractOtherInformation(addSection("其他信息设置"), addField);
@@ -300,6 +303,8 @@
       ? [...highlightRoot.querySelectorAll("textarea.highlight-text, textarea[placeholder=\'请输入产品亮点\']")].filter(isDisplayed)
       : [];
     const faqBlocks = faqRoot ? [...faqRoot.querySelectorAll(".atom-faq")] : [];
+    const customRoot = findSectionRoot("customProperties");
+    const customRows = customRoot ? [...customRoot.querySelectorAll(".J-selfprop")] : [];
 
     return {
       centerWordMode: "single",
@@ -307,12 +312,17 @@
       keywordSlotsRendered: keywordControls.length,
       keywordAddSupported: Boolean(keywordRoot?.querySelector(".J-keyword-add")),
       keywordPluginInputCeiling: 20,
+      customAttributeSlotsRendered: customRows.length,
+      customAttributeAddSupported: Boolean(customRoot?.querySelector(".J-prop-add") ||
+        customRows.some((row) => !row.querySelector("input[name='customPropName']")?.value.trim())),
+      customAttributePluginInputCeiling: 15,
       highlightSlotsRendered: highlightControls.length,
       highlightAddSupported: Boolean(highlightRoot && findAddHighlightButton(highlightRoot)),
       highlightPluginInputCeiling: 20,
       faqSlotsRendered: faqBlocks.length,
       faqAddSupported: Boolean(faqRoot && findAddFaqButton(faqRoot)),
       faqPluginInputCeiling: 12,
+      shippingTemplateBulkFill: Boolean(findSectionRoot("shipping")?.querySelector("select[name='logTemplateId']")),
       productDetailBulkFill: false
     };
   }
@@ -1573,6 +1583,23 @@
     return radios.find((radio) => normalize(getNearbyText(radio)).includes(normalize("单规格最小起订量"))) || radios[0] || null;
   }
 
+  // Guard only unambiguous name-equivalent native attributes.
+  // Semantic overlap beyond these aliases remains an upstream AI review task.
+  function canonicalMicAttributeName(value) {
+    const compact = normalize(value).replace(/[\s_\-\/()]+/g, "");
+    const aliases = {
+      "pixelpitch": "像素间距", "像素间距": "像素间距",
+      "iprating": "ip等级", "ip等级": "ip等级",
+      "certification": "认证", "certifications": "认证", "认证": "认证",
+      "pixeldensity": "像素密度", "像素密度": "像素密度",
+      "brightness": "brightness", "亮度": "brightness",
+      "specification": "规格", "规格": "规格",
+      "trademark": "商标", "商标": "商标",
+      "countryoforigin": "原产地", "原产地": "原产地"
+    };
+    return aliases[compact] || compact;
+  }
+
   async function fillCustomProperties(entries, get, shouldApply, filled) {
     const reserved = new Set([
       "产品名称", "中心词", "关键词", "产品分组", "产品型号", "产品亮点1", "产品亮点2", "产品亮点3",
@@ -1607,14 +1634,27 @@
       filled.push({ key: entry.value, value, target: `customProp ${entry.value}`, score: 120 });
     }
 
+    const nativeNames = new Set(
+      [...customRoot.querySelectorAll(".J-stand-prop")]
+        .map((block) => cleanFieldLabel(block.querySelector(".form-label")?.textContent || "") || block.getAttribute("cz-name") || "")
+        .filter(Boolean)
+        .map(canonicalMicAttributeName)
+    );
+    ["运输包装", "规格", "商标", "原产地"].forEach((name) => nativeNames.add(canonicalMicAttributeName(name)));
+    const existingNames = new Set(
+      [...customMap.keys()].filter(Boolean).map(canonicalMicAttributeName)
+    );
     const customEntries = entries.filter((entry) => shouldUseCustomProperty(entry.key));
     const usedCustomKeys = new Set(filled.map((item) => normalize(item.key)));
     const MAX_CUSTOM_PROPS = 15;
+    const occupiedRows = rows.filter((row) => row.querySelector("input[name='customPropName']")?.value.trim()).length;
     let addedCount = 0;
     for (let index = 0; index < customEntries.length; index += 1) {
       const entry = customEntries[index];
       if (usedCustomKeys.has(normalize(entry.key))) continue;
-      if (addedCount >= MAX_CUSTOM_PROPS) break;
+      const semanticName = canonicalMicAttributeName(entry.key);
+      if (nativeNames.has(semanticName) || existingNames.has(semanticName)) continue;
+      if (occupiedRows + addedCount >= MAX_CUSTOM_PROPS) break;
       const row = await getSequentialCustomPropertyRow(shouldApply);
       if (!row) break;
       const nameInput = row.querySelector("input[name='customPropName']");
@@ -1625,6 +1665,7 @@
       }
       filled.push({ key: entry.key, value: entry.value, target: `customProp ${entry.key}`, score: 120 });
       usedCustomKeys.add(normalize(entry.key));
+      existingNames.add(semanticName);
       addedCount += 1;
     }
 
@@ -2186,15 +2227,22 @@
     const root = findSectionRoot("shipping");
     const select = root?.querySelector("select[name='logTemplateId']");
     if (!select) return;
-    const defaultOption = [...select.options].find((opt) =>
-      normalize(opt.textContent).includes("官方物流") && normalize(opt.textContent).includes("默认推荐")
-    );
-    if (defaultOption && shouldApply) {
+    const requested = get("运费模板") || "官方物流运费模板（默认推荐）";
+    const choices = [...select.options];
+    const match = choices.find((option) => normalize(option.textContent) === normalize(requested)) ||
+      (normalize(requested) === normalize("官方物流运费模板（默认推荐）")
+        ? choices.find((option) =>
+            normalize(option.textContent).includes("官方物流") &&
+            normalize(option.textContent).includes("默认推荐"))
+        : null);
+    if (!match || !match.value) return;
+    if (shouldApply) {
       triggerFieldFocus(select);
-      select.value = defaultOption.value;
+      select.value = match.value;
       dispatchEditableEvents(select);
+      if (select.value !== match.value) return;
     }
-    filled.push({ key: "运费模板", value: defaultOption?.textContent || "官方物流运费模板（默认推荐）", target: "select[name='logTemplateId']", score: 120 });
+    filled.push({ key: "运费模板", value: cleanText(match.textContent), target: "select[name='logTemplateId']", score: 120 });
   }
 
   async function fillDeliveryEfficiency(exactGet, shouldApply, filled) {
