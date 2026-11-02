@@ -1577,6 +1577,23 @@
     return radios.find((radio) => normalize(getNearbyText(radio)).includes(normalize("单规格最小起订量"))) || radios[0] || null;
   }
 
+  // Guard only unambiguous name-equivalent native attributes.
+  // Semantic overlap beyond these aliases remains an upstream AI review task.
+  function canonicalMicAttributeName(value) {
+    const compact = normalize(value).replace(/[\\s\\W_]+/g, "");
+    const aliases = {
+      "pixelpitch": "像素间距", "像素间距": "像素间距",
+      "iprating": "ip等级", "ip等级": "ip等级",
+      "certification": "认证", "certifications": "认证", "认证": "认证",
+      "pixeldensity": "像素密度", "像素密度": "像素密度",
+      "brightness": "brightness", "亮度": "brightness",
+      "specification": "规格", "规格": "规格",
+      "trademark": "商标", "商标": "商标",
+      "countryoforigin": "原产地", "原产地": "原产地"
+    };
+    return aliases[compact] || compact;
+  }
+
   async function fillCustomProperties(entries, get, shouldApply, filled) {
     const reserved = new Set([
       "产品名称", "中心词", "关键词", "产品分组", "产品型号", "产品亮点1", "产品亮点2", "产品亮点3",
@@ -1611,14 +1628,27 @@
       filled.push({ key: entry.value, value, target: `customProp ${entry.value}`, score: 120 });
     }
 
+    const nativeNames = new Set(
+      [...customRoot.querySelectorAll(".J-stand-prop")]
+        .map((block) => cleanFieldLabel(block.querySelector(".form-label")?.textContent || "") || block.getAttribute("cz-name") || "")
+        .filter(Boolean)
+        .map(canonicalMicAttributeName)
+    );
+    ["运输包装", "规格", "商标", "原产地"].forEach((name) => nativeNames.add(canonicalMicAttributeName(name)));
+    const existingNames = new Set(
+      [...customMap.keys()].filter(Boolean).map(canonicalMicAttributeName)
+    );
     const customEntries = entries.filter((entry) => shouldUseCustomProperty(entry.key));
     const usedCustomKeys = new Set(filled.map((item) => normalize(item.key)));
     const MAX_CUSTOM_PROPS = 15;
+    const occupiedRows = rows.filter((row) => row.querySelector("input[name='customPropName']")?.value.trim()).length;
     let addedCount = 0;
     for (let index = 0; index < customEntries.length; index += 1) {
       const entry = customEntries[index];
       if (usedCustomKeys.has(normalize(entry.key))) continue;
-      if (addedCount >= MAX_CUSTOM_PROPS) break;
+      const semanticName = canonicalMicAttributeName(entry.key);
+      if (nativeNames.has(semanticName) || existingNames.has(semanticName)) continue;
+      if (occupiedRows + addedCount >= MAX_CUSTOM_PROPS) break;
       const row = await getSequentialCustomPropertyRow(shouldApply);
       if (!row) break;
       const nameInput = row.querySelector("input[name='customPropName']");
@@ -1629,6 +1659,7 @@
       }
       filled.push({ key: entry.key, value: entry.value, target: `customProp ${entry.key}`, score: 120 });
       usedCustomKeys.add(normalize(entry.key));
+      existingNames.add(semanticName);
       addedCount += 1;
     }
 
