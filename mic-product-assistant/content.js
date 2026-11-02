@@ -316,6 +316,7 @@
       faqSlotsRendered: faqBlocks.length,
       faqAddSupported: Boolean(faqRoot && findAddFaqButton(faqRoot)),
       faqPluginInputCeiling: 12,
+      shippingTemplateBulkFill: Boolean(findSectionRoot("shipping")?.querySelector("select[name='logTemplateId']")),
       productDetailBulkFill: false
     };
   }
