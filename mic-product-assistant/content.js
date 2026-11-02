@@ -323,6 +323,7 @@
       faqAddSupported: Boolean(faqRoot && findAddFaqButton(faqRoot)),
       faqPluginInputCeiling: 12,
       shippingTemplateBulkFill: Boolean(findSectionRoot("shipping")?.querySelector("select[name='logTemplateId']")),
+      explicitOtherOptionSupported: true,
       productDetailBulkFill: false
     };
   }
@@ -2310,22 +2311,31 @@
   }
 
   function fillSelectOrOther(select, value, block, shouldApply = true) {
-    const option = [...select.options].find((item) => sameOption(value, item.textContent) || sameOption(value, item.getAttribute("cz-html") || ""));
-    if (option && normalize(value) !== "other") {
+    const requested = normalize(value);
+    const explicitOther = requested === "other" || requested === "others";
+    // A *requested* Other is a legitimate MIC option, not a request to invent
+    // technical facts. Require an exact current option; never fuzzy-select it.
+    const option = explicitOther
+      ? [...select.options].find((item) =>
+          [normalize(item.textContent), normalize(item.getAttribute("cz-html") || "")].includes(requested))
+      : [...select.options].find((item) =>
+          sameOption(value, item.textContent) || sameOption(value, item.getAttribute("cz-html") || ""));
+    if (option) {
       if (shouldApply) {
         triggerFieldFocus(select);
         select.value = option.value;
         syncSelectAttribute(select);
         dispatchEditableEvents(select);
+        if (select.value !== option.value) return false;
       }
       return true;
     }
 
-    // Do not claim a field was filled by silently selecting Other.
-    // Only use Other when a real free-text companion control exists.
+    // Only use a fallback 'Other' for a specific custom value when the form
+    // actually exposes a companion text field. No false success otherwise.
     const other = [...select.options].find((item) => item.value === "-1" || normalize(item.textContent).includes("other"));
     const otherInput = block.querySelector("input.J-prop-other, input[name='industryPropOtherValue']");
-    if (!other || !otherInput || normalize(value) === "other") return false;
+    if (!other || !otherInput || explicitOther) return false;
     if (shouldApply) {
       triggerFieldFocus(select);
       select.value = other.value;
