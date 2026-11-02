@@ -117,6 +117,7 @@
 
 - 产品编辑上下文和类别表单 Schema 增加“运费信息 / 运费模板”字段、选项和实际已选值。
 - `capabilities.shippingTemplateBulkFill` 标明页面是否存在可填的运费模板 select 控件。
+- `capabilities.customAttributeAddSupported`、`customAttributeSlotsRendered`、`customAttributePluginInputCeiling` 为 V2 分批优化提供实际页面容量；新增属性会在 DOM 中与标准/固定属性做名称及常见中英同义项去重，不保证自动检测所有语义重复。
 - 插件支持 `# 运费信息` 下的 `运费模板：官方物流运费模板（默认推荐）`，省略时仍采用官方默认选项。
 - 如果默认选项不存在或写入失败，不再将其误报为已填充。
 - 安装更新后必须在 Chrome 扩展程序页面重新加载，再重新提取页面 JSON；以前的 11 板块导出不包含运费模板。
