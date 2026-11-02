@@ -168,6 +168,9 @@
       ["单个包裹高", "input[name='packHeight']"],
       ["单个包裹毛重", "input[name='grossWeight']"]
     ]);
+    extractSimpleSection(addSection("运费信息"), addField, "shipping", [
+      ["运费模板", "select[name='logTemplateId']"]
+    ]);
     extractDelivery(addSection("发货效率信息"), addField);
     extractSample(addSection("样品单交易设置"), addField);
     extractOtherInformation(addSection("其他信息设置"), addField);
@@ -2186,15 +2189,22 @@
     const root = findSectionRoot("shipping");
     const select = root?.querySelector("select[name='logTemplateId']");
     if (!select) return;
-    const defaultOption = [...select.options].find((opt) =>
-      normalize(opt.textContent).includes("官方物流") && normalize(opt.textContent).includes("默认推荐")
-    );
-    if (defaultOption && shouldApply) {
+    const requested = get("运费模板") || "官方物流运费模板（默认推荐）";
+    const choices = [...select.options];
+    const match = choices.find((option) => normalize(option.textContent) === normalize(requested)) ||
+      (normalize(requested) === normalize("官方物流运费模板（默认推荐）")
+        ? choices.find((option) =>
+            normalize(option.textContent).includes("官方物流") &&
+            normalize(option.textContent).includes("默认推荐"))
+        : null);
+    if (!match || !match.value) return;
+    if (shouldApply) {
       triggerFieldFocus(select);
-      select.value = defaultOption.value;
+      select.value = match.value;
       dispatchEditableEvents(select);
+      if (select.value !== match.value) return;
     }
-    filled.push({ key: "运费模板", value: defaultOption?.textContent || "官方物流运费模板（默认推荐）", target: "select[name='logTemplateId']", score: 120 });
+    filled.push({ key: "运费模板", value: cleanText(match.textContent), target: "select[name='logTemplateId']", score: 120 });
   }
 
   async function fillDeliveryEfficiency(exactGet, shouldApply, filled) {
