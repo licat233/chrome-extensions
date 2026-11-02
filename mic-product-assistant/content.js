@@ -1580,7 +1580,7 @@
   // Guard only unambiguous name-equivalent native attributes.
   // Semantic overlap beyond these aliases remains an upstream AI review task.
   function canonicalMicAttributeName(value) {
-    const compact = normalize(value).replace(/[\\s\\W_]+/g, "");
+    const compact = normalize(value).replace(/[\s_\-\/()]+/g, "");
     const aliases = {
       "pixelpitch": "像素间距", "像素间距": "像素间距",
       "iprating": "ip等级", "ip等级": "ip等级",
