@@ -26,6 +26,7 @@
 | 文本字段 | 页面板块 | 页面控件 |
 | --- | --- | --- |
 | `产品名称` | 基本信息 | `textarea[name="prodName"]` |
+| `中心词` | 基本信息 | `input[name="prodCenterWord"]`；产品名称更新后异步生成候选，空态仍导出 `active:false` 动态字段 |
 | `产品型号` | 基本信息 | `input[name="prodModel"]` |
 | `关键词` | 基本信息 | 可重复关键词输入；插件技术输入 ceiling 为 20，但 MIC 业务允许/推荐数量由上游当前平台规则决定 |
 | `产品亮点1..N` | 产品亮点 | 亮点输入框，按序添加 |
@@ -63,6 +64,8 @@
 | `产量` | 其他信息设置 | `input[name="prodProductivity"]` |
 | `海关编码` | 其他信息设置 | `input[name="hsCode"]` |
 | `FAQ问题N` / `FAQ答案N` | FAQ | FAQ 行，按序添加 |
+
+中心词空态时：`centerWordMode: single` 且产品名称输入框存在，但 `centerWordCandidateCount: 0`，并不等于该字段不存在。v0.3.5 将 `中心词` 作为动态字段导出；AI 可以提出从标题中提炼的候选，但最终必须匹配 MIC 更新标题后实际生成的选项。插件只有成功勾选真实候选项才报告回填成功，未匹配不得伪报已填。
 
 规格管理空态时，MIC 页面可能只渲染“添加规格”按钮，不会预先渲染 `spec-group` 输入框。提取器仍需输出 `规格1名称` / `规格1值1` 动态字段模板，并在 capabilities 暴露 `specGroupAddSupported`、`specGroupsRendered`、`specValueAddSupportedAfterGroupCreation` 等信息。插件回填器负责先创建规格组，再填写名称和值；不能把空态误判为没有规格字段。
 
