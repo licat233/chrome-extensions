@@ -47,7 +47,7 @@ const extractSpecifications = new Function(
 );
 
 const section = { name: "规格管理", fields: [] };
-extractSpecifications(section, (target, field) => target.fields.push(field), () => {});
+extractSpecifications(section, (target, field) => target.fields.push(field), target => { target.exists = true; });
 assert.equal(section.exists, true);
 assert.equal(section.empty, true);
 assert.equal(section.fields.length, 2);
