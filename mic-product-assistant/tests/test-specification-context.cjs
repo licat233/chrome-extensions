@@ -20,9 +20,14 @@ const addTemplate = new Function(
   `${addTemplateSource}\nreturn addSpecificationTemplateFields;`
 )((section, field) => section.fields.push(field));
 
+const helpText = "为了提升买家购物体验，建议填写一个规格，最多可填写300种组合规格";
 const specRoot = {
   querySelectorAll: () => [],
-  querySelector: selector => selector === ".J-btn-addSpecGroup" ? { textContent: "添加规格" } : null
+  querySelector: selector => {
+    if (selector === ".J-btn-addSpecGroup") return { textContent: "添加规格" };
+    if (selector === ".J-specsMng-header .help-desc") return { textContent: helpText };
+    return null;
+  }
 };
 const extractSpecificationsSource = functionSource(
   "  function extractSpecifications(",
@@ -63,7 +68,6 @@ const capabilitiesSource = functionSource(
   "\n  function extractBasicInformation("
 );
 const keywordRoot = { querySelectorAll: () => [], querySelector: () => null };
-const helpText = "为了提升买家购物体验，建议填写一个规格，最多可填写300种组合规格";
 const capabilities = new Function(
   "findSectionRoot",
   "getCenterWordControls",
