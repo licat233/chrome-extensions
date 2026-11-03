@@ -325,7 +325,7 @@
     return {
       centerWordMode: "single",
       centerWordCandidateCount: getCenterWordControls().length,
-      centerWordDeferredSupported: Boolean(document.querySelector("textarea[name='prodName']")),
+      centerWordDeferredSupported: Boolean(findSectionRoot("basicInfo")?.querySelector("textarea[name='prodName']")),
       keywordSlotsRendered: keywordControls.length,
       keywordAddSupported: Boolean(keywordRoot?.querySelector(".J-keyword-add")),
       keywordPluginInputCeiling: 20,
