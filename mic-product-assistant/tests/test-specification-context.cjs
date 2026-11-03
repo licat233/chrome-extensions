@@ -128,12 +128,12 @@ assert.match(valueCreatorSource, /attempts < 20/);
 async function testDynamicSpecificationFill() {
   const parseSpecGroupsSource = functionSource(
     "  function parseSpecGroups(",
-    "\\n  async function getSequentialSpecGroup("
+    "\n  async function getSequentialSpecGroup("
   );
   const parseSpecGroups = new Function(
     "normalize",
     "splitValues",
-    `${parseSpecGroupsSource}\\nreturn parseSpecGroups;`
+    `${parseSpecGroupsSource}\nreturn parseSpecGroups;`
   )(
     value => String(value || "").toLowerCase().trim(),
     value => String(value || "").split(";").map(item => item.trim()).filter(Boolean)
@@ -141,7 +141,7 @@ async function testDynamicSpecificationFill() {
 
   const getSequentialSpecGroupSource = functionSource(
     "  async function getSequentialSpecGroup(",
-    "\\n  async function getSequentialSpecValueInput("
+    "\n  async function getSequentialSpecValueInput("
   );
   const getSequentialSpecGroup = new Function(
     "findSectionRoot",
@@ -149,7 +149,7 @@ async function testDynamicSpecificationFill() {
     "findAddSpecGroupButton",
     "sleep",
     "waitFor",
-    `${getSequentialSpecGroupSource}\\nreturn getSequentialSpecGroup;`
+    `${getSequentialSpecGroupSource}\nreturn getSequentialSpecGroup;`
   )(
     () => root,
     target => target.groups,
@@ -160,14 +160,14 @@ async function testDynamicSpecificationFill() {
 
   const getSequentialSpecValueInputSource = functionSource(
     "  async function getSequentialSpecValueInput(",
-    "\\n  function getSpecGroups("
+    "\n  function getSpecGroups("
   );
   const getSequentialSpecValueInput = new Function(
     "getSpecValueInputs",
     "findAddSpecValueButton",
     "sleep",
     "waitFor",
-    `${getSequentialSpecValueInputSource}\\nreturn getSequentialSpecValueInput;`
+    `${getSequentialSpecValueInputSource}\nreturn getSequentialSpecValueInput;`
   )(
     group => group.values,
     () => null,
@@ -177,7 +177,7 @@ async function testDynamicSpecificationFill() {
 
   const fillSpecManagementSource = functionSource(
     "  async function fillSpecManagement(",
-    "\\n  function getSpecManagementEntries("
+    "\n  function getSpecManagementEntries("
   );
   const fillSpecManagement = new Function(
     "getSpecManagementEntries",
@@ -185,7 +185,7 @@ async function testDynamicSpecificationFill() {
     "getSequentialSpecGroup",
     "getSequentialSpecValueInput",
     "applyValue",
-    `${fillSpecManagementSource}\\nreturn fillSpecManagement;`
+    `${fillSpecManagementSource}\nreturn fillSpecManagement;`
   )(
     entries => entries,
     parseSpecGroups,
