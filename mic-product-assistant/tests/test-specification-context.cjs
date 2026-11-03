@@ -191,7 +191,7 @@ async function testDynamicSpecificationFill() {
     parseSpecGroups,
     getSequentialSpecGroup,
     getSequentialSpecValueInput,
-    input => { input.value = arguments[1]; }
+    (input, value) => { input.value = value; }
   );
 
   const specNameInput = { value: "" };
