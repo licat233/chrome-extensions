@@ -1,0 +1,40 @@
+name: MIC Product Assistant Tests
+
+on:
+  pull_request:
+    paths:
+      - "mic-product-assistant/**"
+      - ".github/workflows/test-mic-product-assistant.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "mic-product-assistant/**"
+      - ".github/workflows/test-mic-product-assistant.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Syntax check
+        working-directory: mic-product-assistant
+        run: node --check content.js
+
+      - name: Explicit Other regression
+        working-directory: mic-product-assistant
+        run: node tests/test-explicit-other.cjs
+
+      - name: Dynamic specification context regression
+        working-directory: mic-product-assistant
+        run: node tests/test-specification-context.cjs

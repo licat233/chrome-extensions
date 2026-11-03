@@ -111,6 +111,8 @@ jobs:
             - v0.3.2：支持提取并回填运费模板，导出自定义属性新增能力与页面容量
             - v0.3.3：当 MIC 当前下拉选项真实包含 Other 时，支持直接选择该合法选项
             - v0.3.3：产品 Context 新增 `explicitOtherOptionSupported: true`，旧 Context 需重新提取
+            - v0.3.4：空态规格管理导出动态规格字段、添加规格能力、推荐规格数与组合规格上限
+            - v0.3.4：类别 Schema 保留规格管理空态及动态字段状态，规格值动态添加上限与解析器同步
           - **MIC Course Video Link Downloader v__VIDEO_VERSION__**
           
           ## 安装

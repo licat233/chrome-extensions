@@ -249,6 +249,7 @@
             fieldType: field.fieldType,
             required: Boolean(field.required),
             controlType: field.controlType,
+            ...(typeof field.active === "boolean" ? { active: field.active } : {}),
             ...(field.options?.length ? { options: field.options } : {}),
             ...(field.domLocator ? { domLocator: field.domLocator } : {})
           }];
@@ -258,6 +259,7 @@
         return {
           name: section.name,
           ...(section.exists ? { exists: true } : {}),
+          ...(section.empty ? { empty: true } : {}),
           fields
         };
       })
@@ -305,6 +307,20 @@
     const faqBlocks = faqRoot ? [...faqRoot.querySelectorAll(".atom-faq")] : [];
     const customRoot = findSectionRoot("customProperties");
     const customRows = customRoot ? [...customRoot.querySelectorAll(".J-selfprop")] : [];
+    const specRoot = findSectionRoot("specManagement");
+    const specGroups = specRoot ? getSpecGroups(specRoot) : [];
+    const specGroupAddButton = specRoot ? findAddSpecGroupButton(specRoot) : null;
+    const specValueSlotsRendered = specGroups.reduce(
+      (total, group) => total + getSpecValueInputs(group).length,
+      0
+    );
+    const specHelpText = cleanText(
+      specRoot?.querySelector(".J-specsMng-header .help-desc")?.textContent || ""
+    );
+    const specCombinationLimitMatch = specHelpText.match(/最多可填写\s*(\d+)\s*种组合规格/);
+    const specValueAddSupported = specGroups.length
+      ? specGroups.every((group) => Boolean(findAddSpecValueButton(group)))
+      : null;
 
     return {
       centerWordMode: "single",
@@ -322,6 +338,17 @@
       faqSlotsRendered: faqBlocks.length,
       faqAddSupported: Boolean(faqRoot && findAddFaqButton(faqRoot)),
       faqPluginInputCeiling: 12,
+      specManagementExists: Boolean(specRoot),
+      specGroupsRendered: specGroups.length,
+      specGroupAddSupported: Boolean(specGroupAddButton),
+      specGroupPluginInputCeiling: 10,
+      specValueSlotsRendered,
+      specValueAddSupported,
+      specValueAddSupportedAfterGroupCreation: true,
+      specValuePluginInputCeiling: 20,
+      specRecommendedMinimumGroups: /建议填写一个规格/.test(specHelpText) ? 1 : null,
+      specCombinationPlatformLimit: specCombinationLimitMatch ? Number(specCombinationLimitMatch[1]) : null,
+      specRecommendationText: specHelpText || null,
       shippingTemplateBulkFill: Boolean(findSectionRoot("shipping")?.querySelector("select[name='logTemplateId']")),
       explicitOtherOptionSupported: true,
       productDetailBulkFill: false
@@ -465,20 +492,24 @@
     addField(section, {
       fieldName: "规格1名称",
       bulkFillFieldName: "规格名称",
-      fieldType: "待创建字段（模块空态）",
-      required: true,
+      fieldOrigin: "mic_builtin",
+      fieldType: "动态字段（当前未渲染；需先点击添加规格）",
+      required: false,
       controlType: "text",
       value: "",
-      domLocator: "input[name='specName']"
+      active: false,
+      domLocator: "button.J-btn-addSpecGroup -> input[name='specName']"
     });
     addField(section, {
       fieldName: "规格1值1",
       bulkFillFieldName: "规格值",
-      fieldType: "待创建字段（模块空态）",
-      required: true,
+      fieldOrigin: "mic_builtin",
+      fieldType: "动态字段（当前未渲染；需先点击添加规格）",
+      required: false,
       controlType: "text-list",
       value: "",
-      domLocator: "input[name='specValue']"
+      active: false,
+      domLocator: "button.J-btn-addSpecGroup -> input[name='specValue']"
     });
   }
 
@@ -1447,7 +1478,7 @@
   }
 
   async function getSequentialSpecValueInput(specGroup, index, shouldApply) {
-    for (let attempts = 0; attempts < 12; attempts += 1) {
+    for (let attempts = 0; attempts < 20; attempts += 1) {
       const inputs = getSpecValueInputs(specGroup);
       if (inputs[index]) return inputs[index];
 

@@ -13,12 +13,13 @@
 | 5 | `# FOB价格设置` | `data-anchor="skuFob"` |
 | 6 | `# 计量单位` | `data-anchor="unit"` |
 | 7 | `# 包裹尺寸` | `data-anchor="package"` |
-| 8 | `# 发货效率信息` | `data-anchor="sent"` |
-| 9 | `# 样品单交易设置` | `data-anchor="sample"` |
-| 10 | `# 其他信息设置` | `data-anchor="other"` / `data-anchor="otherInfo"` |
-| 11 | `# FAQ` | `#faqRoot` |
+| 8 | `# 运费信息` | `data-anchor="shipping"` / `select[name="logTemplateId"]` |
+| 9 | `# 发货效率信息` | `data-anchor="sent"` |
+| 10 | `# 样品单交易设置` | `data-anchor="sample"` |
+| 11 | `# 其他信息设置` | `data-anchor="other"` / `data-anchor="otherInfo"` |
+| 12 | `# FAQ` | `#faqRoot` |
 
-`产品展示`、`运费信息` 和 `产品详情` 不参与一键提取；这些板块不是稳定的文本批量回填目标。
+`产品展示` 和 `产品详情` 不参与一键提取。运费信息通过当前页面真实的 `select[name="logTemplateId"]` 提取，并由 `capabilities.shippingTemplateBulkFill` 标明是否支持回填。
 
 ## 明确绑定字段
 
@@ -38,8 +39,9 @@
 | `商标` | 产品属性 | `input[name="prodTrademark"]` |
 | `原产地` | 产品属性 | `input[name="prodOrigin"]` |
 | 自定义属性 | 产品属性 | 自定义属性行，按键值对添加 |
-| `规格名称` / `规格值` | 规格管理 | 规格组 |
+| `规格名称` / `规格值` | 规格管理 | 动态规格组；空态先点击 `.J-btn-addSpecGroup` 创建 |
 | `规格2名称` / `规格2值` | 规格管理 | 第二规格组 |
+| `运费模板` | 运费信息 | `select[name="logTemplateId"]` |
 | `规格最小起订量` / `规格商品编码` / `规格库存` / `规格单价` | FOB价格设置 | 按规格价格销售/一口价销售；有规格组合时批量填入每一行 SKU |
 | `价格区间N起订量` / `价格区间N单价` / `库存` | FOB价格设置 | 按采购数量-阶梯价销售 |
 | `区间价最小起订量` / `区间价最低价` / `区间价最高价` / `区间价库存` | FOB价格设置 | 区间价销售 |
@@ -62,7 +64,8 @@
 | `海关编码` | 其他信息设置 | `input[name="hsCode"]` |
 | `FAQ问题N` / `FAQ答案N` | FAQ | FAQ 行，按序添加 |
 
-`产品展示`、`运费信息` 和 `产品详情` 不参与一键提取，也不自动填充；图片/视频、运费模板、详情编辑器和隐藏提交字段保持人工处理。
+规格管理空态时，MIC 页面可能只渲染“添加规格”按钮，不会预先渲染 `spec-group` 输入框。提取器仍需输出 `规格1名称` / `规格1值1` 动态字段模板，并在 capabilities 暴露 `specGroupAddSupported`、`specGroupsRendered`、`specValueAddSupportedAfterGroupCreation` 等信息。插件回填器负责先创建规格组，再填写名称和值；不能把空态误判为没有规格字段。
+
 
 ## 自定义属性保留字段
 
