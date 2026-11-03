@@ -108,6 +108,9 @@ jobs:
             - 可用于 EAO 的 MIC Category Form Schema 工作流
             - v0.3.1：最多回填 12 组 FAQ（由页面实际可添加行数决定）
             - v0.3.1：标准属性匹配失败且没有自定义输入框时，不再虚报成功
+            - v0.3.2：支持提取并回填运费模板，导出自定义属性新增能力与页面容量
+            - v0.3.3：当 MIC 当前下拉选项真实包含 Other 时，支持直接选择该合法选项
+            - v0.3.3：产品 Context 新增 `explicitOtherOptionSupported: true`，旧 Context 需重新提取
           - **MIC Course Video Link Downloader v__VIDEO_VERSION__**
           
           ## 安装
