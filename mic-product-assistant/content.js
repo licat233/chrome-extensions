@@ -325,6 +325,7 @@
     return {
       centerWordMode: "single",
       centerWordCandidateCount: getCenterWordControls().length,
+      centerWordDeferredSupported: Boolean(document.querySelector("textarea[name='prodName']")),
       keywordSlotsRendered: keywordControls.length,
       keywordAddSupported: Boolean(keywordRoot?.querySelector(".J-keyword-add")),
       keywordPluginInputCeiling: 20,
@@ -359,13 +360,19 @@
     const root = findSectionRoot("basicInfo") || document;
     addControlField(section, addField, "产品名称", root.querySelector("textarea[name='prodName']"));
 
-    const centerWords = [...root.querySelectorAll("input[name='prodCenterWord']")];
-    if (centerWords.length) {
+    // Center-word options are generated after the product title changes. Preserve
+    // the field as an inactive dynamic target even when no candidates are rendered.
+    const centerWords = getCenterWordControls();
+    const candidateReady = centerWords.length > 0;
+    if (root.querySelector("textarea[name='prodName']") || candidateReady) {
       addField(section, {
         fieldName: "中心词",
+        fieldType: candidateReady ? "页面字段（MIC 默认）" : "动态字段（填写产品名称后生成候选词）",
         controlType: "checkbox-group",
-        value: centerWords.filter((item) => item.checked).map(choiceText),
-        options: centerWords.map(choiceText)
+        value: centerWords.filter((item) => item.checked).map(centerWordText),
+        options: centerWords.map(centerWordText),
+        domLocator: "input[name='prodCenterWord']",
+        active: candidateReady
       });
     }
 
@@ -747,7 +754,7 @@
     const pageIdentity = readPageIdentity();
 
     fillProductNameBeforeCenterWord(get, shouldApply, filled);
-    fillCenterWord(get, shouldApply, filled);
+    await fillCenterWord(get, shouldApply, filled);
     fillSimpleBoundFields(get, shouldApply, filled, new Set(["产品名称"]));
     await fillKeywords(entries, shouldApply, filled);
     const skippedHighlights = await fillHighlights(get, shouldApply, filled);
@@ -843,16 +850,9 @@
     }
   }
 
-  function fillCenterWord(get, shouldApply, filled) {
+  async function fillCenterWord(get, shouldApply, filled) {
     const requestedValues = splitValues(get("中心词", "core word", "core keyword"));
     if (!requestedValues.length) return;
-    const beforeSnapshot = shouldApply ? createCenterWordSnapshot() : null;
-
-    if (shouldApply) {
-      const titleBinding = SIMPLE_FIELD_BINDINGS.find((binding) => binding.key === "产品名称");
-      const titleControl = titleBinding ? queryBinding(titleBinding) : null;
-      if (titleControl) triggerTitleBlurForCenterWords(titleControl);
-    }
 
     if (!shouldApply) {
       const result = findMatchingCenterWord(requestedValues);
@@ -862,24 +862,29 @@
       return;
     }
 
+    // Refresh the MIC candidate list after updating the title, and do not
+    // count this field as filled until a matching on-page option is selected.
+    const beforeSnapshot = createCenterWordSnapshot();
     cancelPendingCenterWordFill?.();
-    const pendingRecord = {
-      key: "中心词",
-      value: requestedValues.join("; "),
-      target: "后台监听 .J-center-words-box",
-      score: 80
-    };
-    filled.push(pendingRecord);
+    const titleBinding = SIMPLE_FIELD_BINDINGS.find((binding) => binding.key === "产品名称");
+    const titleControl = titleBinding ? queryBinding(titleBinding) : null;
+    if (titleControl) triggerTitleBlurForCenterWords(titleControl);
+    const result = await new Promise((resolve) => {
+      cancelPendingCenterWordFill = waitForFreshMatchingCenterWord(requestedValues, beforeSnapshot, {
+        timeout: 6000,
+        settleDelay: 350,
+        onMatch: resolve,
+        onTimeout: () => resolve(null)
+      });
+    });
+    if (!result?.match) return;
 
-    cancelPendingCenterWordFill = waitForFreshMatchingCenterWord(requestedValues, beforeSnapshot, {
-      timeout: 6000,
-      settleDelay: 350,
-      onMatch: (result) => {
-        selectSingleCenterWord(result.match, result.controls);
-        pendingRecord.value = centerWordText(result.match);
-        pendingRecord.target = centerWordLocator(result.match);
-        pendingRecord.score = 120;
-      }
+    selectSingleCenterWord(result.match, result.controls);
+    filled.push({
+      key: "中心词",
+      value: centerWordText(result.match),
+      target: centerWordLocator(result.match),
+      score: 120
     });
   }
 
@@ -899,6 +904,7 @@
     const timeout = options.timeout ?? 6000;
     const settleDelay = options.settleDelay ?? 350;
     const onMatch = options.onMatch || (() => {});
+    const onTimeout = options.onTimeout || (() => {});
     let observer = null;
     let timeoutTimer = 0;
     let settleTimer = 0;
@@ -952,7 +958,7 @@
     }
 
     setTimeout(scheduleCheck, 0);
-    timeoutTimer = setTimeout(cleanup, timeout);
+    timeoutTimer = setTimeout(() => { cleanup(); onTimeout(); }, timeout);
     return cleanup;
   }
 
