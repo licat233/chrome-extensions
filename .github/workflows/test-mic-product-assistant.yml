@@ -35,6 +35,10 @@ jobs:
         working-directory: mic-product-assistant
         run: node tests/test-explicit-other.cjs
 
+      - name: Deferred center word extraction and fill regression
+        working-directory: mic-product-assistant
+        run: node tests/test-center-word-deferred.cjs
+
       - name: Dynamic specification context regression
         working-directory: mic-product-assistant
         run: node tests/test-specification-context.cjs
