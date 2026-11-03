@@ -124,4 +124,103 @@ const valueCreatorSource = functionSource(
 );
 assert.match(valueCreatorSource, /attempts < 20/);
 
-console.log("MIC_SPECIFICATION_CONTEXT_TEST=PASS");
+
+async function testDynamicSpecificationFill() {
+  const parseSpecGroupsSource = functionSource(
+    "  function parseSpecGroups(",
+    "\\n  async function getSequentialSpecGroup("
+  );
+  const parseSpecGroups = new Function(
+    "normalize",
+    "splitValues",
+    `${parseSpecGroupsSource}\\nreturn parseSpecGroups;`
+  )(
+    value => String(value || "").toLowerCase().trim(),
+    value => String(value || "").split(";").map(item => item.trim()).filter(Boolean)
+  );
+
+  const getSequentialSpecGroupSource = functionSource(
+    "  async function getSequentialSpecGroup(",
+    "\\n  async function getSequentialSpecValueInput("
+  );
+  const getSequentialSpecGroup = new Function(
+    "findSectionRoot",
+    "getSpecGroups",
+    "findAddSpecGroupButton",
+    "sleep",
+    "waitFor",
+    `${getSequentialSpecGroupSource}\\nreturn getSequentialSpecGroup;`
+  )(
+    () => root,
+    target => target.groups,
+    () => addGroupButton,
+    async () => {},
+    async predicate => predicate()
+  );
+
+  const getSequentialSpecValueInputSource = functionSource(
+    "  async function getSequentialSpecValueInput(",
+    "\\n  function getSpecGroups("
+  );
+  const getSequentialSpecValueInput = new Function(
+    "getSpecValueInputs",
+    "findAddSpecValueButton",
+    "sleep",
+    "waitFor",
+    `${getSequentialSpecValueInputSource}\\nreturn getSequentialSpecValueInput;`
+  )(
+    group => group.values,
+    () => null,
+    async () => {},
+    async predicate => predicate()
+  );
+
+  const fillSpecManagementSource = functionSource(
+    "  async function fillSpecManagement(",
+    "\\n  function getSpecManagementEntries("
+  );
+  const fillSpecManagement = new Function(
+    "getSpecManagementEntries",
+    "parseSpecGroups",
+    "getSequentialSpecGroup",
+    "getSequentialSpecValueInput",
+    "applyValue",
+    `${fillSpecManagementSource}\\nreturn fillSpecManagement;`
+  )(
+    entries => entries,
+    parseSpecGroups,
+    getSequentialSpecGroup,
+    getSequentialSpecValueInput,
+    input => { input.value = arguments[1]; }
+  );
+
+  const specNameInput = { value: "" };
+  const specValueInput = { value: "" };
+  const newGroup = {
+    values: [specValueInput],
+    querySelector: selector => selector.includes("specName") ? specNameInput : null
+  };
+  const root = { groups: [] };
+  const addGroupButton = {
+    disabled: false,
+    click: () => root.groups.push(newGroup)
+  };
+  const filled = [];
+  await fillSpecManagement([
+    { section: "规格管理", key: "规格名称", value: "Model" },
+    { section: "规格管理", key: "规格值", value: "SLIM-213BW-L" }
+  ], true, filled);
+
+  assert.equal(root.groups.length, 1, "the plugin must create the dynamic group first");
+  assert.equal(specNameInput.value, "Model");
+  assert.equal(specValueInput.value, "SLIM-213BW-L");
+  assert.equal(filled.length, 2);
+}
+
+testDynamicSpecificationFill()
+  .then(() => console.log("MIC_SPECIFICATION_CONTEXT_TEST=PASS"))
+  .catch(error => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+
