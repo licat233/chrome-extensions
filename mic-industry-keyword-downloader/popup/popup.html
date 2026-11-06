@@ -15,6 +15,12 @@
 
   <main>
     <div id="message" class="message" role="status">正在读取当前页面…</div>
+    <div id="picker-notice" class="picker-notice" role="status" hidden>
+      <strong>需要启用文件夹访问功能</strong>
+      <p>当前浏览器没有提供文件夹选择功能。Brave 默认关闭该功能，因此暂时无法设置保存路径。</p>
+      <p>在地址栏打开 <code>brave://flags/#file-system-access-api</code>，将 <b>File System Access API</b> 设为 <b>Enabled</b>，然后重启 Brave。</p>
+      <p>此设置对整个浏览器生效；网站访问文件时仍需你授权。</p>
+    </div>
     <div class="save-setting"><span id="save-location">保存位置：未设置</span><button id="settings" type="button">设置保存路径</button></div>
 
     <section id="form" hidden>

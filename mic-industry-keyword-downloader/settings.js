@@ -4,12 +4,21 @@ const chooseButton = document.querySelector('#choose');
 const authorizeButton = document.querySelector('#authorize');
 let selectedDirectory = null;
 let locked = false;
+const pickerAvailable = typeof window.showDirectoryPicker === 'function';
 
 async function refresh() {
+  if (!pickerAvailable) {
+    locationText.textContent = '无法选择文件夹';
+    statusText.textContent = '当前浏览器没有启用文件夹访问功能，无法选择保存路径。';
+    chooseButton.disabled = true;
+    authorizeButton.hidden = true;
+    document.querySelector('#feature-help').hidden = false;
+    return;
+  }
   selectedDirectory = await DirectoryStore.get();
   const { job } = await chrome.storage.local.get('job');
   locked = Boolean(job?.id && job.status !== 'done');
-  chooseButton.disabled = locked;
+  chooseButton.disabled = locked || !pickerAvailable;
   if (!selectedDirectory) {
     locationText.textContent = '尚未选择文件夹';
     statusText.textContent = locked ? '任务尚未结束，请先继续完成任务。' : '请选择保存位置。';
@@ -26,6 +35,7 @@ async function refresh() {
 
 chooseButton.addEventListener('click', async () => {
   try {
+    if (!pickerAvailable) throw new Error('当前浏览器没有启用文件夹访问功能。');
     const handle = await window.showDirectoryPicker({ mode: 'readwrite', id: 'mic-keyword-save' });
     const { job } = await chrome.storage.local.get('job');
     if (job?.id && job.status !== 'done') {

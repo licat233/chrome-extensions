@@ -8,6 +8,9 @@ header p { margin: 0; color: #617082; font-size: 12px; line-height: 1.5; }
 main { padding: 16px 20px 20px; overflow: auto; max-height: 474px; }
 .message { margin-bottom: 12px; color: #58718c; font-size: 12px; line-height: 1.5; }
 .message.error { color: #b52b33; background: #fff0f0; padding: 10px; border-radius: 7px; }
+.picker-notice { margin: 0 0 12px; padding: 11px; border: 1px solid #e9d6a4; border-radius: 8px; background: #fffbef; color: #614d22; font-size: 12px; line-height: 1.5; }
+.picker-notice p { margin: 7px 0 0; }
+.picker-notice code { overflow-wrap: anywhere; color: #824800; }
 .save-setting { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 16px; padding: 10px; border: 1px solid #dce4ed; border-radius: 8px; background: #fff; color: #4c6178; font-size: 12px; }
 .save-setting span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .save-setting button { flex: none; padding: 6px 8px; border: 1px solid #cad6e3; border-radius: 6px; color: #1677d2; background: #fff; font-size: 11px; }

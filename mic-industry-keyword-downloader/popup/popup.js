@@ -21,6 +21,8 @@ let config;
 let chosenIds = new Set();
 let chosenMonths = new Set();
 let currentJob;
+const pickerAvailable = typeof window.showDirectoryPicker === 'function';
+document.querySelector('#picker-notice').hidden = pickerAvailable;
 
 function showMessage(message, error = false) {
   elements.message.textContent = message;
@@ -51,7 +53,7 @@ function updateSummary() {
   const total = chosenIds.size * chosenMonths.size;
   elements.count.textContent = `已选 ${chosenIds.size} 个`;
   elements.summary.textContent = `${chosenIds.size} 个行业 × ${chosenMonths.size} 个月份 = ${total} 份 XLSX`;
-  elements.start.disabled = total === 0 || total > 250 || config.region !== '全球' || (currentJob?.id && currentJob.status !== 'done');
+  elements.start.disabled = !pickerAvailable || total === 0 || total > 250 || config.region !== '全球' || (currentJob?.id && currentJob.status !== 'done');
   if (total > 250) elements.summary.textContent += '（一次最多 250 份）';
 }
 
@@ -216,6 +218,7 @@ document.querySelector('#settings').addEventListener('click', async () => {
   await chrome.tabs.create({ url: chrome.runtime.getURL('settings.html') });
 });
 async function requireDirectory() {
+  if (!pickerAvailable) throw new Error('当前浏览器没有启用文件夹访问功能，请按上方提示设置后重试。');
   const directory = await DirectoryStore.get();
   if (!directory || await directory.queryPermission({ mode: 'readwrite' }) !== 'granted') {
     throw new Error('请先点击“设置保存路径”，选择文件夹或重新授权。');
