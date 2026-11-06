@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "MIC 行业关键词批量下载",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "minimum_chrome_version": "116",
   "description": "按已设置的行业和页面可选月份，批量下载 MIC 原生行业关键词 Excel 报表。",
   "icons": {
     "16": "icons/icon-16.png",
@@ -9,7 +10,7 @@
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   },
-  "permissions": ["tabs", "scripting", "downloads", "storage", "alarms"],
+  "permissions": ["tabs", "scripting", "storage", "alarms", "offscreen"],
   "host_permissions": ["https://data.made-in-china.com/*"],
   "background": {
     "service_worker": "service-worker.js"

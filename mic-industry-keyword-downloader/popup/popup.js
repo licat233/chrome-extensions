@@ -20,6 +20,7 @@ const elements = {
 let config;
 let chosenIds = new Set();
 let chosenMonths = new Set();
+let currentJob;
 
 function showMessage(message, error = false) {
   elements.message.textContent = message;
@@ -50,7 +51,7 @@ function updateSummary() {
   const total = chosenIds.size * chosenMonths.size;
   elements.count.textContent = `已选 ${chosenIds.size} 个`;
   elements.summary.textContent = `${chosenIds.size} 个行业 × ${chosenMonths.size} 个月份 = ${total} 份 XLSX`;
-  elements.start.disabled = total === 0 || total > 250 || config.region !== '全球';
+  elements.start.disabled = total === 0 || total > 250 || config.region !== '全球' || (currentJob?.id && currentJob.status !== 'done');
   if (total > 250) elements.summary.textContent += '（一次最多 250 份）';
 }
 
@@ -68,6 +69,21 @@ function updateSearch() {
     parent.classList.toggle('hidden', !parentMatches && visible === 0);
     group.classList.toggle('hidden', !parentMatches && visible === 0);
   }
+}
+
+function syncGroup(group) {
+  const parent = group.querySelector('.industry.parent input');
+  const labels = [...group.querySelectorAll('.industry')];
+  const selected = labels.filter(label => chosenIds.has(label.dataset.id)).length;
+  parent.checked = selected === labels.length;
+  parent.indeterminate = selected > 0 && selected < labels.length;
+  for (const label of group.querySelectorAll('.industry.child')) {
+    label.querySelector('input').checked = chosenIds.has(label.dataset.id);
+  }
+}
+
+function syncAllGroups() {
+  for (const group of elements.industries.querySelectorAll('.group')) syncGroup(group);
 }
 
 function renderOptions() {
@@ -92,12 +108,17 @@ function renderOptions() {
       group.append(checkboxLabel(`industry ${item.id === parent.id ? 'parent' : 'child'}`,
         item.id === parent.id ? parent.label : item.name,
         chosenIds.has(item.id), checked => {
-          if (checked) chosenIds.add(item.id); else chosenIds.delete(item.id);
+          const affected = item.id === parent.id ? items : [item];
+          for (const entry of affected) {
+            if (checked) chosenIds.add(entry.id); else chosenIds.delete(entry.id);
+          }
+          syncGroup(group);
           updateSummary();
           persistSelection();
         }, item.id));
     }
     elements.industries.append(group);
+    syncGroup(group);
   }
 
   updateSummary();
@@ -105,6 +126,7 @@ function renderOptions() {
 }
 
 function renderJob(job) {
+  currentJob = job;
   const visible = Boolean(job?.tasks?.length);
   elements.progress.hidden = !visible;
   if (!visible) return;
@@ -113,14 +135,13 @@ function renderJob(job) {
   elements.progressBar.max = job.tasks.length;
   elements.progressBar.value = finished;
   if (job.status === 'done') {
-    elements.currentFile.textContent = `已完成：${job.completed} 份成功，${job.failed.length} 份失败。文件位于「下载/MIC行业关键词」。`;
+    elements.currentFile.textContent = `已完成：${job.completed} 份成功，${job.failed.length} 份失败。任务文件夹：${job.folderName || '旧任务'}`;
   } else {
     const task = job.active?.task || job.tasks[job.cursor];
     elements.currentFile.textContent = `${job.status === 'paused' ? '已暂停' : '正在下载'}：${task ? `${task.month} · ${task.name}` : '等待中'}`;
   }
-  elements.failures.textContent = job.failed.length
-    ? `失败：${job.failed.slice(-3).map(item => `${item.month} ${item.name}（${item.reason}）`).join('；')}`
-    : '';
+  elements.failures.textContent = [job.error || '', job.failed.length
+    ? `失败：${job.failed.slice(-3).map(item => `${item.month} ${item.name}（${item.reason}）`).join('；')}` : ''].filter(Boolean).join('；');
   elements.pause.hidden = job.status !== 'running';
   elements.resume.hidden = job.status !== 'paused';
   if (config) {
@@ -141,6 +162,11 @@ async function loadConfig() {
 }
 
 async function init() {
+  try {
+    const directory = await DirectoryStore.get();
+    const permission = directory ? await directory.queryPermission({ mode: 'readwrite' }) : '';
+    document.querySelector('#save-location').textContent = directory ? `保存位置：${directory.name}${permission === 'granted' ? '' : '（需重新授权）'}` : '保存位置：未设置';
+  } catch (_) { document.querySelector('#save-location').textContent = '保存位置：读取失败'; }
   try {
     config = await loadConfig();
     if (config.region !== '全球') {
@@ -173,6 +199,7 @@ document.querySelector('#select-visible').addEventListener('click', () => {
     input.checked = true;
     chosenIds.add(label.dataset.id);
   }
+  syncAllGroups();
   updateSummary();
   persistSelection();
 });
@@ -181,9 +208,19 @@ document.querySelector('#clear').addEventListener('click', () => {
     label.querySelector('input').checked = false;
   }
   chosenIds.clear();
+  syncAllGroups();
   updateSummary();
   persistSelection();
 });
+document.querySelector('#settings').addEventListener('click', async () => {
+  await chrome.tabs.create({ url: chrome.runtime.getURL('settings.html') });
+});
+async function requireDirectory() {
+  const directory = await DirectoryStore.get();
+  if (!directory || await directory.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+    throw new Error('请先点击“设置保存路径”，选择文件夹或重新授权。');
+  }
+}
 elements.start.addEventListener('click', async () => {
   const tasks = [];
   for (const month of config.months) {
@@ -194,6 +231,7 @@ elements.start.addEventListener('click', async () => {
   }
   elements.start.disabled = true;
   try {
+    await requireDirectory();
     const result = await chrome.runtime.sendMessage({ type: 'MIC_START', tasks });
     if (!result?.ok) throw new Error(result?.error || '无法启动下载。');
     renderJob(result.job);
@@ -208,8 +246,12 @@ elements.pause.addEventListener('click', async () => {
   if (result?.ok) renderJob(result.job);
 });
 elements.resume.addEventListener('click', async () => {
-  const result = await chrome.runtime.sendMessage({ type: 'MIC_RESUME' });
-  if (result?.ok) renderJob(result.job);
+  try {
+    await requireDirectory();
+    const result = await chrome.runtime.sendMessage({ type: 'MIC_RESUME' });
+    if (!result?.ok) throw new Error(result?.error || '无法继续任务。');
+    renderJob(result.job);
+  } catch (error) { showMessage(error.message || String(error), true); }
 });
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.job) renderJob(changes.job.newValue);
