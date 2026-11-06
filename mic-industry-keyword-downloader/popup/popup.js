@@ -8,6 +8,7 @@ const elements = {
   summary: document.querySelector('#summary'),
   search: document.querySelector('#search'),
   start: document.querySelector('#start'),
+  actionStatus: document.querySelector('#action-status'),
   progress: document.querySelector('#progress'),
   progressCount: document.querySelector('#progress-count'),
   progressBar: document.querySelector('#progress-bar'),
@@ -21,12 +22,37 @@ let config;
 let chosenIds = new Set();
 let chosenMonths = new Set();
 let currentJob;
+let selectedDirectory = null;
+let directoryPermission = '';
 const pickerAvailable = typeof window.showDirectoryPicker === 'function';
 document.querySelector('#picker-notice').hidden = pickerAvailable;
 
 function showMessage(message, error = false) {
   elements.message.textContent = message;
   elements.message.classList.toggle('error', error);
+}
+
+function showActionStatus(message, error = false) {
+  elements.actionStatus.textContent = message;
+  elements.actionStatus.classList.toggle('error', error);
+}
+
+function actionError(error) {
+  if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+    return '浏览器未允许弹出文件夹授权。请点击“设置保存路径”，在设置页选择“重新授权”后再试。';
+  }
+  return error?.message || String(error);
+}
+
+function showDirectoryState() {
+  document.querySelector('#save-location').textContent = selectedDirectory
+    ? `保存位置：${selectedDirectory.name}${directoryPermission === 'granted' ? '' : '（需重新授权）'}`
+    : '保存位置：未设置';
+  elements.start.textContent = !selectedDirectory ? '先设置保存路径'
+    : directoryPermission === 'granted' ? '开始下载' : '授权并开始下载';
+  if (!selectedDirectory) showActionStatus('请先选择一个保存文件夹。');
+  else if (directoryPermission !== 'granted') showActionStatus('点击“授权并开始下载”，在浏览器提示中允许访问已选文件夹。');
+  else showActionStatus('');
 }
 
 function checkboxLabel(className, text, checked, onChange, id = '') {
@@ -53,7 +79,7 @@ function updateSummary() {
   const total = chosenIds.size * chosenMonths.size;
   elements.count.textContent = `已选 ${chosenIds.size} 个`;
   elements.summary.textContent = `${chosenIds.size} 个行业 × ${chosenMonths.size} 个月份 = ${total} 份 XLSX`;
-  elements.start.disabled = !pickerAvailable || total === 0 || total > 250 || config.region !== '全球' || (currentJob?.id && currentJob.status !== 'done');
+  elements.start.disabled = Boolean(!pickerAvailable || total === 0 || total > 250 || config.region !== '全球' || (currentJob?.id && currentJob.status !== 'done'));
   if (total > 250) elements.summary.textContent += '（一次最多 250 份）';
 }
 
@@ -146,6 +172,11 @@ function renderJob(job) {
     ? `失败：${job.failed.slice(-3).map(item => `${item.month} ${item.name}（${item.reason}）`).join('；')}` : ''].filter(Boolean).join('；');
   elements.pause.hidden = job.status !== 'running';
   elements.resume.hidden = job.status !== 'paused';
+  if (job.status === 'paused') {
+    showActionStatus(job.error ? `任务已暂停：${job.error}` : '任务已暂停，点击“继续”可恢复下载。', Boolean(job.error));
+  } else if (job.status === 'done') {
+    showActionStatus(`任务完成：成功 ${job.completed} 份，失败 ${job.failed.length} 份。`, job.failed.length > 0);
+  }
   if (config) {
     updateSummary();
     if (job.status === 'running' || job.status === 'paused') elements.start.disabled = true;
@@ -165,10 +196,14 @@ async function loadConfig() {
 
 async function init() {
   try {
-    const directory = await DirectoryStore.get();
-    const permission = directory ? await directory.queryPermission({ mode: 'readwrite' }) : '';
-    document.querySelector('#save-location').textContent = directory ? `保存位置：${directory.name}${permission === 'granted' ? '' : '（需重新授权）'}` : '保存位置：未设置';
-  } catch (_) { document.querySelector('#save-location').textContent = '保存位置：读取失败'; }
+    selectedDirectory = await DirectoryStore.get();
+    directoryPermission = selectedDirectory ? await selectedDirectory.queryPermission({ mode: 'readwrite' }) : '';
+    showDirectoryState();
+  } catch (_) {
+    selectedDirectory = null;
+    document.querySelector('#save-location').textContent = '保存位置：读取失败';
+    showActionStatus('无法读取保存位置，请点击“设置保存路径”重新选择。', true);
+  }
   try {
     config = await loadConfig();
     if (config.region !== '全球') {
@@ -217,14 +252,25 @@ document.querySelector('#clear').addEventListener('click', () => {
 document.querySelector('#settings').addEventListener('click', async () => {
   await chrome.tabs.create({ url: chrome.runtime.getURL('settings.html') });
 });
-async function requireDirectory() {
+function requestDirectoryPermission() {
   if (!pickerAvailable) throw new Error('当前浏览器没有启用文件夹访问功能，请按上方提示设置后重试。');
-  const directory = await DirectoryStore.get();
-  if (!directory || await directory.queryPermission({ mode: 'readwrite' }) !== 'granted') {
-    throw new Error('请先点击“设置保存路径”，选择文件夹或重新授权。');
+  if (!selectedDirectory) throw new Error('请先设置保存路径。');
+  return selectedDirectory.requestPermission({ mode: 'readwrite' });
+}
+async function acceptDirectoryPermission(permissionPromise) {
+  directoryPermission = await permissionPromise;
+  showDirectoryState();
+  if (directoryPermission !== 'granted') {
+    throw new Error('未获得文件夹写入权限。请允许访问，或点击“设置保存路径”重新选择文件夹。');
   }
 }
 elements.start.addEventListener('click', async () => {
+  if (!selectedDirectory) {
+    showActionStatus('正在打开保存路径设置，请选择文件夹。');
+    try { await chrome.tabs.create({ url: chrome.runtime.getURL('settings.html') }); }
+    catch (error) { showActionStatus(`无法打开设置：${error.message || String(error)}`, true); }
+    return;
+  }
   const tasks = [];
   for (const month of config.months) {
     if (!chosenMonths.has(month)) continue;
@@ -234,13 +280,25 @@ elements.start.addEventListener('click', async () => {
   }
   elements.start.disabled = true;
   try {
-    await requireDirectory();
+    showActionStatus('正在检查文件夹权限；如浏览器弹出授权提示，请选择允许。');
+    const permissionPromise = requestDirectoryPermission();
+    await acceptDirectoryPermission(permissionPromise);
+    showActionStatus('正在启动下载任务…');
     const result = await chrome.runtime.sendMessage({ type: 'MIC_START', tasks });
     if (!result?.ok) throw new Error(result?.error || '无法启动下载。');
-    renderJob(result.job);
-    showMessage('已开始。关闭此窗口后下载会继续。');
+    const { job } = await chrome.storage.local.get('job');
+    const latest = job || result.job;
+    renderJob(latest);
+    if (!elements.progress.hidden) elements.progress.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    if (latest.status === 'paused') {
+      showActionStatus(latest.error || '任务已暂停，请检查进度提示。', true);
+    } else if (latest.status === 'done') {
+      showActionStatus(`任务完成：成功 ${latest.completed} 份，失败 ${latest.failed.length} 份。`, latest.failed.length > 0);
+    } else {
+      showActionStatus('下载任务已开始；关闭此窗口后会继续。');
+    }
   } catch (error) {
-    showMessage(error.message || String(error), true);
+    showActionStatus(actionError(error), true);
     updateSummary();
   }
 });
@@ -250,11 +308,16 @@ elements.pause.addEventListener('click', async () => {
 });
 elements.resume.addEventListener('click', async () => {
   try {
-    await requireDirectory();
+    const permissionPromise = requestDirectoryPermission();
+    showActionStatus('正在检查文件夹权限；如浏览器弹出授权提示，请选择允许。');
+    await acceptDirectoryPermission(permissionPromise);
     const result = await chrome.runtime.sendMessage({ type: 'MIC_RESUME' });
     if (!result?.ok) throw new Error(result?.error || '无法继续任务。');
-    renderJob(result.job);
-  } catch (error) { showMessage(error.message || String(error), true); }
+    const { job } = await chrome.storage.local.get('job');
+    const latest = job || result.job;
+    renderJob(latest);
+    if (latest.status === 'running') showActionStatus('下载任务已继续。');
+  } catch (error) { showActionStatus(actionError(error), true); }
 });
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && changes.job) renderJob(changes.job.newValue);
