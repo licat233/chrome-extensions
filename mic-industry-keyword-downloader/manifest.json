@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "MIC 行业关键词批量下载",
+  "version": "1.0.0",
+  "description": "按已设置的行业和页面可选月份，批量下载 MIC 原生行业关键词 Excel 报表。",
+  "permissions": ["tabs", "scripting", "downloads", "storage", "alarms"],
+  "host_permissions": ["https://data.made-in-china.com/*"],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "MIC 行业关键词批量下载",
+    "default_popup": "popup/popup.html"
+  }
+}

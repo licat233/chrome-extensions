@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIC 行业关键词批量下载</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <div class="eyebrow">MADE-IN-CHINA · 数据罗盘</div>
+    <h1>行业关键词批量下载</h1>
+    <p>每个行业与月份生成一份原生 XLSX，内含行业热词和行业趋势词。</p>
+  </header>
+
+  <main>
+    <div id="message" class="message" role="status">正在读取当前页面…</div>
+
+    <section id="form" hidden>
+      <div class="section-title"><h2>月份</h2><span id="region"></span></div>
+      <div id="months" class="months"></div>
+
+      <div class="section-title industry-title"><h2>行业</h2><span id="industry-count"></span></div>
+      <input id="search" class="search" type="search" placeholder="搜索已设置的行业" aria-label="搜索行业">
+      <div class="quick-actions">
+        <button id="select-visible" type="button">全选当前结果</button>
+        <button id="clear" type="button">清空选择</button>
+      </div>
+      <div id="industries" class="industries"></div>
+      <div class="summary" id="summary"></div>
+      <button id="start" class="primary" type="button">开始下载</button>
+    </section>
+
+    <section id="progress" class="progress" hidden>
+      <div class="section-title"><h2>下载进度</h2><span id="progress-count"></span></div>
+      <progress id="progress-bar" max="1" value="0"></progress>
+      <p id="current-file" class="current-file"></p>
+      <p id="failures" class="failures"></p>
+      <div class="progress-actions">
+        <button id="pause" type="button">暂停</button>
+        <button id="resume" type="button" hidden>继续</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
