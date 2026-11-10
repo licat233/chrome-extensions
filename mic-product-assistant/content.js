@@ -415,6 +415,13 @@
       const boxes = [...block.querySelectorAll("input[type='checkbox'][name='propertyValue']")];
       const select = block.querySelector("select[name='propertyValue']");
       const other = block.querySelector("input.J-prop-other, input[name='industryPropOtherValue']");
+      const otherOption = Boolean(select && [...select.options].some((item) => {
+        const labels = [item.textContent, item.getAttribute("cz-html") || ""].map(normalize);
+        return item.value === "-1" || labels.some((label) =>
+          label === "other" || label === "others" || label === "其他" || label.startsWith("other")
+        );
+      }));
+      const otherInputSupported = Boolean(other || otherOption);
       let value = "";
       let options = [];
       let controlType = "text";
@@ -429,7 +436,9 @@
         const selectedIsOther = select.value === "-1" ||
           [selectedOption?.textContent, selectedOption?.getAttribute("cz-html") || ""]
             .some((label) => ["other", "others", "其他"].includes(normalize(label)));
-        value = selectedIsOther && other ? String(other.value || "").trim() : selectedOptionText(select);
+        value = selectedIsOther && otherInputSupported
+          ? String(other?.value || "").trim()
+          : selectedOptionText(select);
       }
       addField(section, {
         fieldName: label,
@@ -439,8 +448,12 @@
         controlType,
         value,
         options,
-        otherInputSupported: Boolean(other),
-        ...(other ? { otherInputLocator: getDomLocator(other) } : {}),
+        otherInputSupported,
+        ...(otherInputSupported ? {
+          otherInputLocator: other
+            ? getDomLocator(other)
+            : "input.J-prop-other, input[name='industryPropOtherValue']"
+        } : {}),
         domLocator: getDomLocator(select || boxes[0])
       });
     });
