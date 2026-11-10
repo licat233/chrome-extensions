@@ -115,6 +115,7 @@ jobs:
             - v0.3.4：类别 Schema 保留规格管理空态及动态字段状态，规格值动态添加上限与解析器同步
             - v0.3.5：产品名称为空、中心词候选尚未生成时也导出动态 `中心词` 字段；标题更新后等待 MIC 候选并仅在真实选中时报告成功
             - v0.3.6：Context / Category Schema 暴露 Other 附加输入能力；自动选择 Other 后等待并填写动态输入框，空白附加输入不再虚报成功
+            - v0.3.6：更新后请重新加载扩展并刷新 MIC 产品编辑页，重新提取 Context / Category Schema；附加输入值必须来自真实产品资料
           - **MIC Course Video Link Downloader v__VIDEO_VERSION__**
           
           ## 安装
