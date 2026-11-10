@@ -149,7 +149,7 @@
 
 ## 0.3.6｜标准属性 Other 附加输入框
 
-- 产品 Context 与 Category Form Schema 均保留标准属性的 `otherInputSupported` / `otherInputLocator`，避免 AI 只看到 `Other` 选项而遗漏后续输入框。
+- 产品 Context 与 Category Form Schema 均保留标准属性的 `otherInputSupported` / `otherInputLocator`；当附加输入框会在选择 `Other` 后才生成时，也会根据真实 Other 选项暴露该能力。
 - 当标准属性选中 `Other` 且 MIC 生成附加输入框时，插件会等待该输入框出现并填入真实自定义值；直接填写自定义值（如 `显示技术：E-Paper`）即可自动选择 `Other`。
 - 也支持显式写法 `显示技术：Other: E-Paper`。
 - 如果只提交 `Other`，但页面已生成的附加输入框仍为空，插件不会把该字段计为成功。
