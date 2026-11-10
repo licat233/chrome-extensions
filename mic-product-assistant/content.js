@@ -2358,7 +2358,7 @@
 
   async function fillSelectOrOther(select, value, block, shouldApply = true) {
     const rawValue = String(value ?? "").trim();
-    const explicitOtherValue = rawValue.match(/^other(?:s)?\\s*[:：=]\\s*(.+)$/i);
+    const explicitOtherValue = rawValue.match(/^other(?:s)?\s*[:：=]\s*(.+)$/i);
     const normalizedValue = normalize(rawValue);
     const explicitOther = Boolean(explicitOtherValue) || normalizedValue === "other" || normalizedValue === "others";
     const customValue = explicitOtherValue
