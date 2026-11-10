@@ -39,7 +39,10 @@ The Chrome exporter also excludes current product user-added custom attributes s
 
 When generating a new listing from a Category Schema:
 - output only sections/fields represented by that schema, except repeatable rows explicitly supported by its capabilities;
-- use exact current option text when options are provided;
+- for ordinary select fields, use an exact current option text;
+- for a select field with `otherInputSupported: true` and an `Other` option, output the source-grounded custom value itself (for example, `显示技术：E-Paper`), not the literal `Other`; the extension will select `Other` and fill its companion input;
+- `Other: E-Paper` is also accepted when an explicit option-plus-value form is useful;
+- never output `Other` alone when the field exposes a companion input; if no source-grounded custom value exists, omit the field rather than leaving the companion input blank;
 - do not inject fields from an old generic template;
 - do not use the schema as evidence for product values.
 
@@ -49,6 +52,8 @@ For `mic-product-edit-context/v1`:
 - use fields actually present;
 - use `bulkFillFieldName`;
 - respect current `required` and `options`;
+- preserve and follow `otherInputSupported` / `otherInputLocator` when present;
+- when a selected `Other` has an empty companion input, treat the field as incomplete, not as the completed value `Other`;
 - respect capabilities when present;
 - omit stale fields absent from the current page.
 
@@ -80,7 +85,7 @@ Use only attributes represented by the current Context/Category Schema.
 
 Do not duplicate a standard property as a custom attribute.
 
-A Category Schema's field presence does not prove a product-specific value. Values still require upstream product evidence.
+A Category Schema's field presence does not prove a product-specific value. Values still require upstream product evidence. In particular, `otherInputSupported: true` describes an additional MIC text input; it does not authorize guessing what belongs in that input.
 
 ## Specifications and pricing
 
