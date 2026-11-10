@@ -10,8 +10,8 @@ assert.ok(start >= 0 && end > start, "MIC property-selection helper must exist")
 
 const normalize = value => String(value || "")
   .toLowerCase()
-  .replace(/\\s+/g, "")
-  .replace(/[：:：*＊()（）\\[\\]【】,，;；。.-_/\\\\]/g, "");
+  .replace(/\s+/g, "")
+  .replace(/[：:：*＊()（）\[\]【】,，;；。.-_/\\]/g, "");
 const sameOption = (a, b) => normalize(a) === normalize(b);
 
 function makeFill({ onChange = () => {} } = {}) {
@@ -29,7 +29,7 @@ function makeFill({ onChange = () => {} } = {}) {
     "dispatchEditableEvents",
     "applyValue",
     "waitFor",
-    source.slice(start, end) + "\\nreturn fillSelectOrOther;"
+    source.slice(start, end) + "\nreturn fillSelectOrOther;"
   )(
     normalize,
     sameOption,
@@ -115,11 +115,11 @@ async function run() {
   assert.equal(await result.fill(field, "Other: E-Paper", noOtherInput, true), false,
     "An explicit custom value must not be reported as filled when no companion input appears");
 
-  assert.match(source, /input\\.J-prop-other, input\\[name='industryPropOtherValue'\\]/,
+  assert.match(source, /input\.J-prop-other, input\[name='industryPropOtherValue'\]/,
     "Extraction and filling must recognize both supported MIC companion-input selectors");
-  assert.equal((source.match(/typeof field\\.otherInputSupported/g) || []).length, 2,
+  assert.equal((source.match(/typeof field\.otherInputSupported/g) || []).length, 2,
     "Both edit Context and Category Schema must preserve otherInputSupported");
-  assert.match(source, /value = selectedIsOther && other \\? String\\(other\\.value \\|\\| ""\\)\\.trim\\(\\) : selectedOptionText\\(select\\)/,
+  assert.match(source, /value = selectedIsOther && other \? String\(other\.value \|\| ""\)\.trim\(\) : selectedOptionText\(select\)/,
     "A blank Other companion must not be exported as the literal value Other");
 
   console.log("MIC_OTHER_COMPANION_INPUT_TEST=PASS");
