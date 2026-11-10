@@ -65,6 +65,8 @@
 | `海关编码` | 其他信息设置 | `input[name="hsCode"]` |
 | `FAQ问题N` / `FAQ答案N` | FAQ | FAQ 行，按序添加 |
 
+标准属性的下拉选项若包含 `Other`，并且 Context / Category Schema 标记 `otherInputSupported: true`，则该选项对应一个附加输入框。Bulk Fill 应填写真实自定义值（例如 `显示技术：E-Paper`），插件会自动选择 `Other` 并填写附加输入框；不要只输出 `Other`。如果没有可靠的自定义值，应留空，不得将空白附加输入框报告为完成。
+
 中心词空态时：`centerWordMode: single` 且产品名称输入框存在，但 `centerWordCandidateCount: 0`，并不等于该字段不存在。v0.3.5 将 `中心词` 作为动态字段导出；AI 可以提出从标题中提炼的候选，但最终必须匹配 MIC 更新标题后实际生成的选项。插件只有成功勾选真实候选项才报告回填成功，未匹配不得伪报已填。
 
 规格管理空态时，MIC 页面可能只渲染“添加规格”按钮，不会预先渲染 `spec-group` 输入框。提取器仍需输出 `规格1名称` / `规格1值1` 动态字段模板，并在 capabilities 暴露 `specGroupAddSupported`、`specGroupsRendered`、`specValueAddSupportedAfterGroupCreation` 等信息。插件回填器负责先创建规格组，再填写名称和值；不能把空态误判为没有规格字段。
