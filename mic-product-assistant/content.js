@@ -2387,7 +2387,10 @@
     };
 
     const fillCompanion = async (requestedCustomValue) => {
-      if (!shouldApply) return true;
+      if (!shouldApply) {
+        const existingInput = findOtherInput();
+        return requestedCustomValue ? true : existingInput ? Boolean(String(existingInput.value || "").trim()) : true;
+      }
 
       let otherInput = findOtherInput();
       if (!otherInput) {
