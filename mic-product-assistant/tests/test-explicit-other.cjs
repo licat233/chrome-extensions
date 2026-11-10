@@ -119,7 +119,9 @@ async function run() {
     "Extraction and filling must recognize both supported MIC companion-input selectors");
   assert.equal((source.match(/typeof field\.otherInputSupported/g) || []).length, 2,
     "Both edit Context and Category Schema must preserve otherInputSupported");
-  assert.match(source, /value = selectedIsOther && other \? String\(other\.value \|\| ""\)\.trim\(\) : selectedOptionText\(select\)/,
+  assert.match(source, /const otherInputSupported = Boolean\(other \|\| otherOption\)/,
+    "Category fields with an Other option must expose the generated companion-input capability");
+  assert.match(source, /value = selectedIsOther && otherInputSupported/,
     "A blank Other companion must not be exported as the literal value Other");
 
   console.log("MIC_OTHER_COMPANION_INPUT_TEST=PASS");
