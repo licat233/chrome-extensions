@@ -52,7 +52,7 @@ For `mic-product-edit-context/v1`:
 - use fields actually present;
 - use `bulkFillFieldName`;
 - respect current `required` and `options`;
-- preserve and follow `otherInputSupported` / `otherInputLocator` when present;
+- preserve and follow `otherInputSupported` / `otherInputLocator` when present; `otherInputSupported: true` may mean MIC creates the companion input only after selecting `Other`, not that the input must already be visible in the DOM;
 - when a selected `Other` has an empty companion input, treat the field as incomplete, not as the completed value `Other`;
 - respect capabilities when present;
 - omit stale fields absent from the current page.
