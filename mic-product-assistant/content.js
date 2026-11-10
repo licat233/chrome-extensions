@@ -150,6 +150,8 @@
         controlType: field.controlType || "text",
         value: field.value ?? "",
         ...(options.length ? { options } : {}),
+        ...(typeof field.otherInputSupported === "boolean" ? { otherInputSupported: field.otherInputSupported } : {}),
+        ...(field.otherInputLocator ? { otherInputLocator: field.otherInputLocator } : {}),
         ...(field.domLocator ? { domLocator: field.domLocator } : {}),
         ...(typeof field.active === "boolean" ? { active: field.active } : {})
       });
@@ -251,6 +253,8 @@
             controlType: field.controlType,
             ...(typeof field.active === "boolean" ? { active: field.active } : {}),
             ...(field.options?.length ? { options: field.options } : {}),
+            ...(typeof field.otherInputSupported === "boolean" ? { otherInputSupported: field.otherInputSupported } : {}),
+            ...(field.otherInputLocator ? { otherInputLocator: field.otherInputLocator } : {}),
             ...(field.domLocator ? { domLocator: field.domLocator } : {})
           }];
         });
@@ -410,7 +414,7 @@
       const label = cleanFieldLabel(block.querySelector(".form-label")?.textContent || "") || block.getAttribute("cz-name") || "标准属性";
       const boxes = [...block.querySelectorAll("input[type='checkbox'][name='propertyValue']")];
       const select = block.querySelector("select[name='propertyValue']");
-      const other = block.querySelector("input[name='industryPropOtherValue']");
+      const other = block.querySelector("input.J-prop-other, input[name='industryPropOtherValue']");
       let value = "";
       let options = [];
       let controlType = "text";
@@ -421,7 +425,11 @@
       } else if (select) {
         controlType = "select";
         options = selectOptions(select);
-        value = select.value === "-1" && other?.value ? other.value : selectedOptionText(select);
+        const selectedOption = select.options[select.selectedIndex];
+        const selectedIsOther = select.value === "-1" ||
+          [selectedOption?.textContent, selectedOption?.getAttribute("cz-html") || ""]
+            .some((label) => ["other", "others", "其他"].includes(normalize(label)));
+        value = selectedIsOther && other ? String(other.value || "").trim() : selectedOptionText(select);
       }
       addField(section, {
         fieldName: label,
@@ -432,6 +440,7 @@
         value,
         options,
         otherInputSupported: Boolean(other),
+        ...(other ? { otherInputLocator: getDomLocator(other) } : {}),
         domLocator: getDomLocator(select || boxes[0])
       });
     });
@@ -758,8 +767,8 @@
     fillSimpleBoundFields(get, shouldApply, filled, new Set(["产品名称"]));
     await fillKeywords(entries, shouldApply, filled);
     const skippedHighlights = await fillHighlights(get, shouldApply, filled);
-    fillKnownProperties(get, shouldApply, filled);
-    fillDynamicStandardProperties(entries, shouldApply, filled);
+    await fillKnownProperties(get, shouldApply, filled);
+    await fillDynamicStandardProperties(entries, shouldApply, filled);
     await fillCustomProperties(entries, get, shouldApply, filled);
     await fillSpecManagement(entries, shouldApply, filled);
     await fillFobPrices(get, shouldApply, filled, fobPriceMode);
@@ -1309,7 +1318,7 @@
     dispatchEditableEvents(textarea);
   }
 
-  function fillKnownProperties(get, shouldApply, filled) {
+  async function fillKnownProperties(get, shouldApply, filled) {
     const propAliases = [
       ["适用门店", "Store Type"],
       ["安装方式", "Mounting Type"],
@@ -1342,14 +1351,14 @@
         }
       } else {
         const select = block.querySelector("select");
-        if (!select || !fillSelectOrOther(select, value, block, shouldApply)) continue;
+        if (!select || !(await fillSelectOrOther(select, value, block, shouldApply))) continue;
       }
 
       filled.push({ key, value, target: `.J-stand-prop ${english}`, score: 120 });
     }
   }
 
-  function fillDynamicStandardProperties(entries, shouldApply, filled) {
+  async function fillDynamicStandardProperties(entries, shouldApply, filled) {
     const exact = new Map(entries.map((entry) => [normalize(entry.key), entry.value]));
     const alreadyFilled = new Set(filled.map((item) => normalize(item.key)));
 
@@ -1373,7 +1382,7 @@
         }
       } else {
         const select = block.querySelector("select");
-        if (!select || !fillSelectOrOther(select, value, block, shouldApply)) continue;
+        if (!select || !(await fillSelectOrOther(select, value, block, shouldApply))) continue;
       }
 
       filled.push({ key: label || english, value, target: `.J-stand-prop ${english || label}`, score: 115 });
@@ -2347,42 +2356,79 @@
     });
   }
 
-  function fillSelectOrOther(select, value, block, shouldApply = true) {
-    const requested = normalize(value);
-    const explicitOther = requested === "other" || requested === "others";
-    // A *requested* Other is a legitimate MIC option, not a request to invent
-    // technical facts. Require an exact current option; never fuzzy-select it.
-    const option = explicitOther
-      ? [...select.options].find((item) =>
-          [normalize(item.textContent), normalize(item.getAttribute("cz-html") || "")].includes(requested))
-      : [...select.options].find((item) =>
-          sameOption(value, item.textContent) || sameOption(value, item.getAttribute("cz-html") || ""));
-    if (option) {
-      if (shouldApply) {
-        triggerFieldFocus(select);
-        select.value = option.value;
-        syncSelectAttribute(select);
-        dispatchEditableEvents(select);
-        if (select.value !== option.value) return false;
-      }
-      return true;
-    }
+  async function fillSelectOrOther(select, value, block, shouldApply = true) {
+    const rawValue = String(value ?? "").trim();
+    const explicitOtherValue = rawValue.match(/^other(?:s)?\\s*[:：=]\\s*(.+)$/i);
+    const normalizedValue = normalize(rawValue);
+    const explicitOther = Boolean(explicitOtherValue) || normalizedValue === "other" || normalizedValue === "others";
+    const customValue = explicitOtherValue
+      ? explicitOtherValue[1].trim()
+      : explicitOther ? "" : rawValue;
 
-    // Only use a fallback 'Other' for a specific custom value when the form
-    // actually exposes a companion text field. No false success otherwise.
-    const other = [...select.options].find((item) => item.value === "-1" || normalize(item.textContent).includes("other"));
-    const otherInput = block.querySelector("input.J-prop-other, input[name='industryPropOtherValue']");
-    if (!other || !otherInput || explicitOther) return false;
-    if (shouldApply) {
+    const isOtherOption = (item) => {
+      if (!item) return false;
+      const labels = [item.textContent, item.getAttribute("cz-html") || ""].map(normalize);
+      return item.value === "-1" || labels.some((label) =>
+        label === "other" || label === "others" || label === "其他" || label.startsWith("other")
+      );
+    };
+    const findOtherOption = () => [...select.options].find(isOtherOption);
+    const findOtherInput = () =>
+      block?.querySelector("input.J-prop-other, input[name='industryPropOtherValue']") || null;
+
+    const selectOption = async (option) => {
+      if (!option) return false;
+      if (!shouldApply) return true;
       triggerFieldFocus(select);
-      select.value = other.value;
+      select.value = option.value;
       syncSelectAttribute(select);
       dispatchEditableEvents(select);
+      return select.value === option.value;
+    };
+
+    const fillCompanion = async (requestedCustomValue) => {
+      if (!shouldApply) return true;
+
+      let otherInput = findOtherInput();
+      if (!otherInput) {
+        await waitFor(() => Boolean(findOtherInput()), requestedCustomValue ? 1200 : 800);
+        otherInput = findOtherInput();
+      }
+      if (!otherInput) return !requestedCustomValue;
+
       otherInput.disabled = false;
-      otherInput.style.display = "";
-      applyValue(otherInput, value, "Other");
+      if (otherInput.style) otherInput.style.display = "";
+
+      if (requestedCustomValue) {
+        applyValue(otherInput, requestedCustomValue, "Other");
+        return normalize(otherInput.value) === normalize(requestedCustomValue);
+      }
+
+      // Selecting Other is not complete when MIC has rendered a blank
+      // companion input. Do not report a false success to the user/EAO.
+      return Boolean(String(otherInput.value || "").trim());
+    };
+
+    // "Other: E-Paper" is accepted for clarity. Prefer the custom value alone
+    // (e.g. "E-Paper"); both forms select Other and fill its companion input.
+    const option = explicitOther
+      ? findOtherOption()
+      : [...select.options].find((item) =>
+          sameOption(rawValue, item.textContent) || sameOption(rawValue, item.getAttribute("cz-html") || "")
+        );
+
+    if (option) {
+      if (!(await selectOption(option))) return false;
+      if (!isOtherOption(option)) return true;
+      return fillCompanion(customValue);
     }
-    return true;
+
+    // A product-specific value not present in the select must use the real
+    // Other option and its dynamically-rendered companion input.
+    const otherOption = findOtherOption();
+    if (!otherOption || explicitOther) return false;
+    if (!(await selectOption(otherOption))) return false;
+    return fillCompanion(customValue);
   }
 
   function sameOption(value, label) {
