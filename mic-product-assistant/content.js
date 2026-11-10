@@ -2394,7 +2394,7 @@
 
       let otherInput = findOtherInput();
       if (!otherInput) {
-        await waitFor(() => Boolean(findOtherInput()), requestedCustomValue ? 1200 : 800);
+        await waitFor(() => Boolean(findOtherInput()), requestedCustomValue ? 1200 : 1500);
         otherInput = findOtherInput();
       }
       if (!otherInput) return !requestedCustomValue;
