@@ -2,9 +2,14 @@
 
 这是一个 Chrome Manifest V3 插件，用于批量下载[中国制造网数据罗盘的行业关键词报表](https://data.made-in-china.com/industry/keyword)。每个「行业 × 月份」组合保存一份站点原生 XLSX，其中包含“行业热词”和“行业趋势词”两张工作表；无需逐页翻阅 TOP100。需要 Chrome 116 或更高版本。
 
+## 下载
+
+- **[下载最新版 ZIP 安装包](https://github.com/licat233/chrome-extensions/releases/latest/download/MIC-Industry-Keyword-Downloader.zip)**
+- [查看所有版本与更新记录](https://github.com/licat233/chrome-extensions/releases)
+
 ## 安装
 
-1. 解压交付的 ZIP 文件。
+1. 下载并解压 ZIP 安装包。
 2. 在 Chrome 打开 `chrome://extensions`，开启右上角“开发者模式”。
 3. 点击“加载已解压的扩展程序”，选择解压后的 `mic-industry-keyword-downloader` 文件夹。
 
